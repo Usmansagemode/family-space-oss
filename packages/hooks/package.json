@@ -1,0 +1,19 @@
+{
+  "name": "@family/hooks",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@family/api": "*",
+    "@family/supabase": "*",
+    "@family/types": "*",
+    "@family/utils": "*"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^19.0.0",
+    "sonner": "^2.0.0"
+  }
+}

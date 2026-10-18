@@ -1,0 +1,22 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+.turbo
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+.output
+.vercel
+.vinxi
+__unconfig*
+todos.json
+coverage
+*.tsbuildinfo
+*.log
+# Expo / React Native
+apps/mobile/.expo
+apps/mobile/android
+apps/mobile/ios

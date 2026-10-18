@@ -1,0 +1,22 @@
+{
+  "name": "@family/utils",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@family/types": "*",
+    "date-fns": "^4.1.0",
+    "rrule": "^2.8.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.5"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

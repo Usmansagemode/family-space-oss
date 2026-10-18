@@ -1,0 +1,202 @@
+/*
+ * Schedule-x theme overrides — mapped to the app's OKLCH design tokens.
+ * These vars cascade from :root so light/dark mode is handled automatically.
+ */
+
+.sx-react-calendar-wrapper {
+  /* Contain schedule-x's internal z-indices so they don't bleed above
+     portaled app UI (sheets, dropdowns, modals). */
+  isolation: isolate;
+
+  /* Primary — teal from app palette */
+  --sx-color-primary: var(--primary);
+  --sx-color-on-primary: var(--primary-foreground);
+  --sx-color-primary-container: oklch(from var(--primary) l c h / 0.15);
+  --sx-color-on-primary-container: var(--primary);
+
+  /* Surfaces */
+  --sx-color-surface: var(--card);
+  --sx-color-surface-container: var(--card);
+  --sx-color-surface-container-high: var(--muted);
+  --sx-color-surface-container-low: var(--background);
+  --sx-color-background: var(--background);
+
+  /* Text */
+  --sx-color-on-surface: var(--foreground);
+  --sx-color-on-background: var(--foreground);
+
+  /* Borders */
+  --sx-color-outline: var(--border);
+  --sx-color-outline-variant: var(--border);
+
+  /* Inherit app font family so calendar text matches the rest of the UI */
+  font-family: inherit;
+}
+
+/*
+ * Re-assert app tokens when schedule-x adds .is-dark (via calendar.setTheme('dark')).
+ * schedule-x's theme-default ships .sx-react-calendar-wrapper.is-dark { --sx-color-*: <hardcoded> }
+ * which wins by source order. We import our CSS after, so same specificity here overwrites it.
+ */
+.sx-react-calendar-wrapper.is-dark {
+  --sx-color-primary: var(--primary);
+  --sx-color-on-primary: var(--primary-foreground);
+  --sx-color-primary-container: oklch(from var(--primary) l c h / 0.15);
+  --sx-color-on-primary-container: var(--primary);
+
+  --sx-color-surface: var(--card);
+  --sx-color-surface-container: var(--card);
+  --sx-color-surface-container-high: var(--muted);
+  --sx-color-surface-container-low: var(--background);
+  --sx-color-background: var(--background);
+
+  --sx-color-on-surface: var(--foreground);
+  --sx-color-on-background: var(--foreground);
+
+  --sx-color-outline: var(--border);
+  --sx-color-outline-variant: var(--border);
+}
+
+/* Virtual (projected) recurring occurrences — visually dimmed, still clickable */
+.sx-react-calendar-wrapper .sx-event-virtual {
+  opacity: 0.5;
+}
+
+/*
+ * Remove schedule-x's outer border/radius — the app layout already provides
+ * visual separation via the sidebar and page container.
+ */
+.sx-react-calendar-wrapper .sx__calendar {
+  border: none;
+  border-radius: 0;
+}
+
+/*
+ * Header controls — restyled to match the app's shadcn button aesthetic.
+ * Targets: Today button, prev/next chevrons, View selector, Date input.
+ */
+
+/* Today → outline variant (h-9, rounded-md, border) */
+.sx-react-calendar-wrapper .sx__today-button {
+  height: 2.25rem;
+  padding: 0 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border) !important;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 150ms, color 150ms;
+}
+.sx-react-calendar-wrapper .sx__today-button:hover,
+.sx-react-calendar-wrapper .sx__today-button:focus {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* Prev/Next chevrons → ghost icon-button variant */
+.sx-react-calendar-wrapper .sx__chevron-wrapper {
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: var(--radius);
+  background: transparent;
+  transition: background-color 150ms;
+}
+.sx-react-calendar-wrapper .sx__chevron-wrapper:hover,
+.sx-react-calendar-wrapper .sx__chevron-wrapper:focus {
+  background-color: var(--accent);
+}
+
+/* View selector → outline variant */
+.sx-react-calendar-wrapper .sx__view-selection-selected-item {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--border) !important;
+  background-color: var(--background);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 150ms;
+}
+.sx-react-calendar-wrapper .sx__view-selection-selected-item:hover {
+  background-color: var(--accent);
+}
+
+/* Hide the Material-style floating "View" label — redundant when value is shown */
+.sx-react-calendar-wrapper .sx__view-selection-label {
+  display: none;
+}
+
+/* Dropdown panel — min-width prevents "Month" from wrapping to two lines */
+.sx-react-calendar-wrapper .sx__view-selection-items {
+  min-width: 7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* Dropdown items — compact height matching shadcn DropdownMenuItem */
+.sx-react-calendar-wrapper .sx__view-selection-item {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Date input → outline variant */
+.sx-react-calendar-wrapper .sx__calendar-header .sx__date-input {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border) !important;
+  background-color: var(--background);
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: auto;
+  cursor: pointer;
+  transition: background-color 150ms, border-color 150ms;
+}
+.sx-react-calendar-wrapper .sx__calendar-header .sx__date-input:hover {
+  background-color: var(--accent);
+}
+.sx-react-calendar-wrapper .sx__calendar-header .sx__date-input--active .sx__date-input {
+  border-color: var(--primary) !important;
+}
+
+/* Hide the Material-style floating "Date" label */
+.sx-react-calendar-wrapper .sx__calendar-header .sx__date-input-label {
+  display: none;
+}
+
+/*
+ * Compact week column headers — show day name and date number on one row.
+ * Default schedule-x stacks them vertically (flex-flow: column) which wastes
+ * vertical space. We switch to a row and reduce the date-number size so the
+ * header strip stays tight.
+ */
+.sx-react-calendar-wrapper .sx__week-grid__date {
+  flex-flow: row;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0;
+}
+
+.sx-react-calendar-wrapper .sx__week-grid__date-number {
+  font-size: var(--sx-font-medium, 0.875rem);
+  height: 1.75em;
+  width: 1.75em;
+}
+
+/* Hover tint on week-view time-grid day columns */
+.sx-react-calendar-wrapper .sx__time-grid-day {
+  transition: background-color 120ms;
+  cursor: pointer;
+}
+.sx-react-calendar-wrapper .sx__time-grid-day:hover {
+  background-color: oklch(from var(--primary) l c h / 0.05);
+}
+
+/* Hover tint on month-view day cells */
+.sx-react-calendar-wrapper .sx__month-grid-day:hover {
+  background-color: oklch(from var(--primary) l c h / 0.04);
+  transition: background-color 120ms;
+}

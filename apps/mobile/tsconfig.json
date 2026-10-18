@@ -1,0 +1,32 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@family/api": [
+        "../../packages/api/src/index.ts"
+      ],
+      "@family/config": [
+        "../../packages/config/src/index.ts"
+      ],
+      "@family/hooks": [
+        "../../packages/hooks/src/index.ts"
+      ],
+      "@family/supabase": [
+        "../../packages/supabase/src/index.ts"
+      ],
+      "@family/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@family/utils": [
+        "../../packages/utils/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/*/src/**/*.ts",
+    "nativewind-env.d.ts"
+  ]
+}

@@ -1,0 +1,60 @@
+import {
+  Baby,
+  Beef,
+  Briefcase,
+  Car,
+  CircleHelp,
+  Coffee,
+  Dog,
+  Dumbbell,
+  Fuel,
+  Gift,
+  GraduationCap,
+  Heart,
+  Home,
+  type LucideIcon,
+  Music,
+  Pill,
+  Plane,
+  Scissors,
+  Shirt,
+  ShoppingCart,
+  Smartphone,
+  Utensils,
+  Wifi,
+  Wrench,
+  Zap,
+} from 'lucide-react'
+
+export type CategoryIconDef = { id: string; label: string; icon: LucideIcon }
+
+export const CATEGORY_ICONS: CategoryIconDef[] = [
+  { id: 'shopping-cart',  label: 'Grocery',       icon: ShoppingCart },
+  { id: 'utensils',       label: 'Dining/Takeout', icon: Utensils },
+  { id: 'beef',           label: 'Meat/Halal',     icon: Beef },
+  { id: 'coffee',         label: 'Coffee/Café',    icon: Coffee },
+  { id: 'car',            label: 'Car',            icon: Car },
+  { id: 'fuel',           label: 'Petrol/Gas',     icon: Fuel },
+  { id: 'plane',          label: 'Travel',         icon: Plane },
+  { id: 'shirt',          label: 'Shopping',       icon: Shirt },
+  { id: 'gift',           label: 'Gifts',          icon: Gift },
+  { id: 'zap',            label: 'Utilities',      icon: Zap },
+  { id: 'wifi',           label: 'Internet/Phone', icon: Wifi },
+  { id: 'smartphone',     label: 'Electronics',    icon: Smartphone },
+  { id: 'home',           label: 'Housing/Rent',   icon: Home },
+  { id: 'wrench',         label: 'Repairs',        icon: Wrench },
+  { id: 'heart',          label: 'Health',         icon: Heart },
+  { id: 'pill',           label: 'Pharmacy',       icon: Pill },
+  { id: 'dumbbell',       label: 'Fitness/Gym',    icon: Dumbbell },
+  { id: 'scissors',       label: 'Personal Care',  icon: Scissors },
+  { id: 'graduation-cap', label: 'Education',      icon: GraduationCap },
+  { id: 'baby',           label: 'Kids/Baby',      icon: Baby },
+  { id: 'dog',            label: 'Pets',           icon: Dog },
+  { id: 'music',          label: 'Entertainment',  icon: Music },
+  { id: 'briefcase',      label: 'Business',       icon: Briefcase },
+  { id: 'circle-help',    label: 'Misc',           icon: CircleHelp },
+]
+
+export function getCategoryIcon(iconId: string | null | undefined): LucideIcon {
+  return CATEGORY_ICONS.find((i) => i.id === iconId)?.icon ?? CircleHelp
+}

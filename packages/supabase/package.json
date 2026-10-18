@@ -1,0 +1,12 @@
+{
+  "name": "@family/supabase",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@family/types": "*",
+    "@supabase/supabase-js": "^2.98.0"
+  }
+}

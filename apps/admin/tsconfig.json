@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["**/*.ts", "**/*.tsx", "eslint.config.js", "vite.config.js"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@family/hooks": ["../../packages/hooks/src/index.ts"],
+      "@family/supabase": ["../../packages/supabase/src/index.ts"],
+      "@family/types": ["../../packages/types/src/index.ts"],
+      "@family/utils": ["../../packages/utils/src/index.ts"]
+    },
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  }
+}

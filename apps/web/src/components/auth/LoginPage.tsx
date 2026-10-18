@@ -29,31 +29,19 @@ const GOOGLE_SVG = (
 // ── Email auth form ───────────────────────────────────────────────────────────
 
 function EmailAuthForm() {
-  const { signInWithEmail, signUpWithEmail } = useAuthContext()
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const { signInWithEmail } = useAuthContext()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    setMessage(null)
     setLoading(true)
-
-    const err =
-      mode === 'signin'
-        ? await signInWithEmail(email, password)
-        : await signUpWithEmail(email, password)
-
+    const err = await signInWithEmail(email, password)
     setLoading(false)
-    if (err) {
-      setError(err)
-    } else if (mode === 'signup') {
-      setMessage('Check your email to confirm your account.')
-    }
+    if (err) setError(err)
   }
 
   return (
@@ -72,50 +60,12 @@ function EmailAuthForm() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         required
-        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+        autoComplete="current-password"
       />
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {message && <p className="text-sm text-green-600">{message}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading
-          ? 'Please wait…'
-          : mode === 'signin'
-            ? 'Sign in'
-            : 'Create account'}
+        {loading ? 'Please wait…' : 'Sign in'}
       </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        {mode === 'signin' ? (
-          <>
-            No account?{' '}
-            <button
-              type="button"
-              className="underline underline-offset-2 hover:text-foreground"
-              onClick={() => {
-                setMode('signup')
-                setError(null)
-                setMessage(null)
-              }}
-            >
-              Sign up
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{' '}
-            <button
-              type="button"
-              className="underline underline-offset-2 hover:text-foreground"
-              onClick={() => {
-                setMode('signin')
-                setError(null)
-                setMessage(null)
-              }}
-            >
-              Sign in
-            </button>
-          </>
-        )}
-      </p>
     </form>
   )
 }

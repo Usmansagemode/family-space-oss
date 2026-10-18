@@ -17,8 +17,11 @@ drop function if exists set_item_created_by()                         cascade;
 drop function if exists prevent_active_system_space_delete()          cascade;
 drop function if exists auto_sort_order_spaces()                      cascade;
 drop function if exists auto_sort_order_categories()                  cascade;
+drop function if exists find_or_create_family()                    cascade;
+-- Signatures that trusted a client-supplied user id must not exist.
 drop function if exists find_or_create_family(uuid)                cascade;
 drop function if exists accept_invite(uuid, uuid, uuid)            cascade;
+drop table if exists invites                                        cascade;
 drop function if exists reassign_and_delete_category(uuid, uuid)   cascade;
 drop function if exists is_family_member(uuid)               cascade;
 drop function if exists is_family_owner(uuid)                cascade;
@@ -41,7 +44,6 @@ drop table if exists income_entries          cascade;
 drop table if exists expenses                cascade;
 drop table if exists recurring_transactions  cascade;
 drop table if exists items            cascade;
-drop table if exists invites          cascade;
 drop table if exists categories       cascade;
 drop table if exists spaces           cascade;
 drop table if exists user_families    cascade;
@@ -84,6 +86,9 @@ create table families (
   updated_at                  timestamptz default now()
 );
 
+-- One deployment = one family: a second families row is rejected.
+create unique index families_singleton on families ((true));
+
 -- user_families: many-to-many users <-> families
 -- The second FK to profiles is required for PostgREST to resolve
 -- .select('user_id, role, profiles(name, email, avatar_url)') joins.
@@ -95,16 +100,6 @@ create table user_families (
   primary key (user_id, family_id),
   constraint user_families_profile_fkey
     foreign key (user_id) references profiles(id) on delete cascade
-);
-
--- Shareable invite links; token is the secret passed in the URL
-create table invites (
-  token       uuid primary key default gen_random_uuid(),
-  family_id   uuid not null references families(id) on delete cascade,
-  created_by  uuid references auth.users(id) on delete set null,
-  accepted_at timestamptz,
-  accepted_by uuid references auth.users(id) on delete set null,
-  created_at  timestamptz default now()
 );
 
 -- Board columns: person (paid-by / chore assignee) or store (grocery list) or chore
@@ -359,8 +354,6 @@ grant select, insert, update, delete on budgets         to authenticated;
 grant select, insert, update, delete on items           to authenticated;
 grant select, insert, update, delete on trackers        to authenticated;
 grant select, insert, update, delete on tracker_entries to authenticated;
-grant select                          on invites              to anon;
-grant select, insert, update          on invites              to authenticated;
 grant select, insert, update, delete  on split_groups         to authenticated;
 grant select, insert, update, delete  on split_participants   to authenticated;
 grant select, insert, update, delete  on split_expenses       to authenticated;
@@ -622,37 +615,71 @@ grant execute on function split_share_is_family_member(uuid)        to authentic
 -- Called via supabase.rpc() — never as direct table operations.
 -- ----------------------------------------------------------------
 
--- Called on every login. Upserts the profile and returns the user's
--- family, creating one (as owner) if they don't have one yet.
--- Also ensures a system person space exists for this member.
-create or replace function find_or_create_family(p_user_id uuid)
+-- Called on every login. Upserts the caller's profile and returns the single
+-- family, creating it (caller becomes owner) when the database is empty, or
+-- adding the caller as a member when the family already exists.
+-- Also ensures a system person space exists for the caller.
+create or replace function find_or_create_family()
 returns json language plpgsql security definer set search_path = public as $$
 declare
+  v_user_id   uuid := auth.uid();
   v_family_id uuid;
   v_family    families%rowtype;
   v_name      text;
+  v_joined    text;
 begin
+  -- Anonymous sign-ins carry a real uid; they must never join the family.
+  -- Removed members are banned (see blockMember), but an access token issued
+  -- before the ban stays valid until it expires, so check the ban here too.
+  if v_user_id is null
+     or coalesce((auth.jwt()->>'is_anonymous')::boolean, false)
+     or exists (select 1 from auth.users where id = v_user_id and banned_until > now()) then
+    raise exception 'not_authenticated';
+  end if;
+
   insert into profiles (id, name, email, avatar_url)
   select id, coalesce(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name'), email, raw_user_meta_data->>'avatar_url'
-  from auth.users where id = p_user_id
+  from auth.users where id = v_user_id
   on conflict (id) do update
     set name = excluded.name, email = excluded.email, avatar_url = excluded.avatar_url;
 
+  -- Serialise concurrent logins so two first users cannot both create the
+  -- family, and a joiner never races the creator (families_singleton backs this up).
+  perform pg_advisory_xact_lock(hashtext('find_or_create_family'));
+
   select family_id into v_family_id
-  from user_families where user_id = p_user_id
+  from user_families where user_id = v_user_id
   order by joined_at asc limit 1;
+
+  if v_family_id is null then
+    select id into v_family_id from families limit 1;
+
+    if v_family_id is not null then
+      -- Existing family, new caller: join as a member and log member.joined.
+      -- If the family has lost its owner, the joiner takes the role so the
+      -- family can still be managed.
+      insert into user_families (user_id, family_id, role)
+      values (v_user_id, v_family_id, case
+        when exists (select 1 from user_families where family_id = v_family_id and role = 'owner') then 'member'
+        else 'owner' end);
+
+      select coalesce(name, email, 'Someone') into v_joined from profiles where id = v_user_id;
+      insert into activity_log (family_id, event_type, payload)
+      values (v_family_id, 'member.joined', jsonb_build_object('name', v_joined));
+    end if;
+  end if;
 
   if v_family_id is not null then
     -- Ensure system person space exists (idempotent)
     select coalesce(p.name, u.email) into v_name
     from auth.users u left join profiles p on p.id = u.id
-    where u.id = p_user_id;
+    where u.id = v_user_id;
 
     insert into spaces (family_id, name, type, show_in_expenses, is_system, linked_user_id, sort_order)
-    select v_family_id, coalesce(v_name, 'Member'), 'person', true, true, p_user_id,
+    select v_family_id, coalesce(v_name, 'Member'), 'person', true, true, v_user_id,
            coalesce((select max(sort_order) + 1 from spaces where family_id = v_family_id), 0)
     where not exists (
-      select 1 from spaces where family_id = v_family_id and linked_user_id = p_user_id and type = 'person'
+      select 1 from spaces where family_id = v_family_id and linked_user_id = v_user_id and type = 'person'
     );
 
     select * into v_family from families where id = v_family_id;
@@ -660,15 +687,15 @@ begin
   end if;
 
   insert into families (name) values ('Our Family') returning * into v_family;
-  insert into user_families (user_id, family_id, role) values (p_user_id, v_family.id, 'owner');
+  insert into user_families (user_id, family_id, role) values (v_user_id, v_family.id, 'owner');
 
   -- Create owner's system person space
   select coalesce(p.name, u.email) into v_name
   from auth.users u left join profiles p on p.id = u.id
-  where u.id = p_user_id;
+  where u.id = v_user_id;
 
   insert into spaces (family_id, name, type, show_in_expenses, is_system, linked_user_id, sort_order)
-  values (v_family.id, coalesce(v_name, 'Owner'), 'person', true, true, p_user_id, 0);
+  values (v_family.id, coalesce(v_name, 'Owner'), 'person', true, true, v_user_id, 0);
 
   -- Seed default categories for new families (pastel CHART_COLORS palette)
   insert into categories (family_id, name, color, icon, sort_order) values
@@ -686,51 +713,8 @@ begin
 end;
 $$;
 
--- Called when a user accepts a family invite link.
-create or replace function accept_invite(p_token uuid, p_user_id uuid, p_family_id uuid)
-returns void language plpgsql security definer set search_path = public as $$
-declare
-  v_name text;
-begin
-  insert into profiles (id, name, email, avatar_url)
-  select id, coalesce(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name'), email, raw_user_meta_data->>'avatar_url'
-  from auth.users where id = p_user_id
-  on conflict (id) do update
-    set name = excluded.name, email = excluded.email, avatar_url = excluded.avatar_url;
-
-  -- Delete solo families auto-created on signup (user is the only member)
-  delete from families
-  where id in (
-    select uf.family_id from user_families uf
-    where uf.user_id = p_user_id
-      and uf.family_id != p_family_id
-      and (select count(*) from user_families where family_id = uf.family_id) = 1
-  );
-
-  delete from user_families where user_id = p_user_id and family_id != p_family_id;
-
-  insert into user_families (user_id, family_id, role)
-  values (p_user_id, p_family_id, 'member')
-  on conflict (user_id, family_id) do nothing;
-
-  -- Create system person space for the new member (idempotent)
-  select coalesce(p.name, u.email) into v_name
-  from auth.users u left join profiles p on p.id = u.id
-  where u.id = p_user_id;
-
-  insert into spaces (family_id, name, type, show_in_expenses, is_system, linked_user_id, sort_order)
-  select p_family_id, coalesce(v_name, 'Member'), 'person', true, true, p_user_id,
-         coalesce((select max(sort_order) + 1 from spaces where family_id = p_family_id), 0)
-  where not exists (
-    select 1 from spaces where family_id = p_family_id and linked_user_id = p_user_id and type = 'person'
-  );
-
-  update invites set accepted_at = now() where token = p_token;
-end;
-$$;
-
-grant execute on function find_or_create_family(uuid)     to authenticated;
-grant execute on function accept_invite(uuid, uuid, uuid) to authenticated;
+revoke execute on function find_or_create_family() from public, anon;
+grant execute on function find_or_create_family() to authenticated;
 
 -- Atomically reassign all expenses from one category to another, then hard-delete
 -- the old category. Runs as a single transaction to prevent partial failures.
@@ -752,7 +736,6 @@ grant execute on function reassign_and_delete_category(uuid, uuid) to authentica
 alter table profiles        enable row level security;
 alter table families        enable row level security;
 alter table user_families   enable row level security;
-alter table invites         enable row level security;
 alter table spaces          enable row level security;
 alter table categories      enable row level security;
 alter table expenses        enable row level security;
@@ -771,7 +754,7 @@ alter table split_settlements         enable row level security;
 -- ----------------------------------------------------------------
 -- PART 10: POLICIES
 -- INSERT on families/user_families goes through SECURITY DEFINER
--- RPCs (find_or_create_family, accept_invite) — no direct insert policy needed.
+-- RPC find_or_create_family — no direct insert policy needed.
 -- ----------------------------------------------------------------
 
 -- profiles
@@ -796,13 +779,6 @@ create policy "user_families_select" on user_families
 create policy "user_families_delete" on user_families
   for delete to authenticated
   using (user_id = auth.uid() or is_family_owner(family_id));
-
--- invites
-create policy "invites_select"  on invites for select using (true);
-create policy "invites_insert"  on invites
-  for insert to authenticated with check (is_family_member(family_id));
-create policy "invites_update"  on invites
-  for update to authenticated using (is_family_member(family_id)) with check (true);
 
 -- spaces
 create policy "spaces_select" on spaces

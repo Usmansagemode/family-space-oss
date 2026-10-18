@@ -149,11 +149,11 @@ export async function removeFamilyMember(
     .is('deleted_at', null)
 }
 
-export async function findOrCreateFamily(userId: string): Promise<Family> {
+// Returns the single family, creating it (caller = owner) on an empty database
+// or joining the caller as a member. The RPC identifies the caller via auth.uid().
+export async function findOrCreateFamily(): Promise<Family> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase.rpc('find_or_create_family', {
-    p_user_id: userId,
-  })
+  const { data, error } = await supabase.rpc('find_or_create_family')
 
   if (error) throw error
   return mapFamily(data as Parameters<typeof mapFamily>[0])

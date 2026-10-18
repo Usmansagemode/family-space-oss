@@ -5,7 +5,7 @@ import type { Family } from '@family/types'
 export function useUserFamily(userId: string | undefined) {
   return useQuery<Family>({
     queryKey: ['family', 'user', userId],
-    queryFn: () => findOrCreateFamily(userId!),
+    queryFn: () => findOrCreateFamily(),
     enabled: !!userId,
     staleTime: Infinity,
   })

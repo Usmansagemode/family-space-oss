@@ -92,9 +92,6 @@ export {
 export { logActivity, fetchActivityLog } from './activity'
 export type { RawActivityLog } from './activity'
 
-export { createInvite, getInviteByToken, acceptInvite } from './invites'
-export type { InviteInfo } from './invites'
-
 export { deleteUserCompletely } from './account'
 
 export {

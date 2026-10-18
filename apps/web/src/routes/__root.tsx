@@ -15,6 +15,7 @@ import { AppNav } from '#/components/AppNav'
 import { AuthProvider } from '#/contexts/auth'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
+import { useFamilyMembers } from '#/hooks/auth/useFamilyMembers'
 import { MobileNavProvider } from '#/contexts/mobile-nav'
 
 import TanStackQueryProvider from '#/integrations/tanstack-query/root-provider'
@@ -55,11 +56,11 @@ const PUBLIC_PATHS = ['/']
 function AuthedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext()
   const { data: family } = useUserFamily(user?.id)
+  const { data: members } = useFamilyMembers(family?.id)
+  const role = members?.find((m) => m.userId === user?.id)?.role
   const navigate = useNavigate()
   const { location } = useRouterState()
-  const isPublicRoute =
-    PUBLIC_PATHS.includes(location.pathname) ||
-    location.pathname.startsWith('/invite')
+  const isPublicRoute = PUBLIC_PATHS.includes(location.pathname)
 
   const isOnboarding = location.pathname === '/onboarding'
 
@@ -69,7 +70,9 @@ function AuthedLayout({ children }: { children: React.ReactNode }) {
     }
   }, [loading, user, isPublicRoute, navigate])
 
-  // Redirect new users to onboarding wizard before they see the app.
+  // Redirect the owner to the onboarding wizard until the family is set up.
+  // Members never see it: only the owner can update the family row, so a
+  // member who logs in before onboarding finishes goes straight to the board.
   // Note: we cannot use !isPublicRoute here because '/' is in PUBLIC_PATHS
   // (it doubles as the login page for unauthenticated visitors). Instead we
   // explicitly exclude only the routes where an onboarding redirect makes no
@@ -78,13 +81,18 @@ function AuthedLayout({ children }: { children: React.ReactNode }) {
     if (
       user &&
       family &&
+      role === 'owner' &&
       !family.onboardingCompletedAt &&
-      !isOnboarding &&
-      !location.pathname.startsWith('/invite')
+      !isOnboarding
     ) {
       void navigate({ to: '/onboarding' })
     }
-  }, [user, family, isOnboarding, location.pathname, navigate])
+  }, [user, family, role, isOnboarding, navigate])
+
+  // Members never run onboarding (see above)
+  useEffect(() => {
+    if (isOnboarding && role === 'member') void navigate({ to: '/', search: { tab: undefined } })
+  }, [isOnboarding, role, navigate])
 
   // No user: render public routes normally; for protected routes show nothing
   // while the redirect (above) takes effect

@@ -7,7 +7,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Copy,
   Crown,
   Eye,
   EyeOff,
@@ -20,7 +19,6 @@ import {
   Tag,
   Trash2,
   User,
-  UserPlus,
   UserRoundPlus,
   Users,
   Wallet,
@@ -71,13 +69,13 @@ import { useCategoriesMutations } from '#/hooks/categories/useCategoriesMutation
 import { useBudgets } from '#/hooks/budgets/useBudgets'
 import { useBudgetMutations } from '#/hooks/budgets/useBudgetMutations'
 import { supabase } from '#/lib/supabase'
-import { createInvite } from '#/lib/supabase/invites'
 import { updateFamily, removeFamilyMember } from '#/lib/supabase/families'
 import { archiveSpace, countSpaceExpenses } from '#/lib/supabase/spaces'
 import { AddSpaceSheet } from '#/components/board/AddSpaceSheet'
 import { cn, formatCurrency } from '#/lib/utils'
 import { SPACE_COLORS, CHART_COLORS } from '#/lib/config'
 import type { Space, Category, Budget, BudgetPeriod } from '@family/types'
+import { blockMember } from '#/lib/server/block-member'
 import { deleteAccount } from '#/lib/server/delete-account'
 
 export const Route = createFileRoute('/settings')({
@@ -342,38 +340,27 @@ function MembersTab({
   const [budgetDraftAmount, setBudgetDraftAmount] = useState('')
   const [budgetDraftPeriod, setBudgetDraftPeriod] = useState<BudgetPeriod>('monthly')
 
-  const [inviteLink, setInviteLink] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
   const isOwner = members?.find((m) => m.userId === currentUserId)?.role === 'owner'
 
   const personSpaces = (spaces ?? []).filter((s) => s.type === 'person')
 
-  const invite = useMutation({
-    mutationFn: () => createInvite(familyId),
-    onSuccess: (token) => {
-      setInviteLink(`${window.location.origin}/invite?token=${token}`)
-    },
-    onError: () => toast.error('Failed to create invite link'),
-  })
-
   const remove = useMutation({
-    mutationFn: (userId: string) => removeFamilyMember(familyId, userId),
+    mutationFn: async (userId: string) => {
+      if (!supabase) throw new Error('Authentication is unavailable.')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Your session has expired. Please sign in again.')
+      const result = await blockMember({ data: { accessToken: session.access_token, familyId, userId } })
+      if (!result.success) throw new Error(result.message)
+      await removeFamilyMember(familyId, userId)
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['family-members', familyId] })
       toast.success('Member removed')
     },
     onError: () => toast.error('Failed to remove member'),
   })
-
-  function handleCopy() {
-    if (!inviteLink) return
-    void navigator.clipboard.writeText(inviteLink).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
 
   function toggleExpand(memberId: string) {
     setExpandedIds((prev) => {
@@ -414,46 +401,6 @@ function MembersTab({
   return (
     <div className="mx-auto max-w-lg px-4 py-4 sm:px-6 sm:py-6">
       <div className="flex flex-col gap-6">
-        {/* Invite */}
-        <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">Invite a member</p>
-          <p className="text-xs text-muted-foreground">
-            Generate a one-time link and share it with a family member.
-          </p>
-          {inviteLink ? (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
-              <span className="flex-1 truncate text-xs text-muted-foreground">
-                {inviteLink}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopy}
-                className="shrink-0 text-muted-foreground transition hover:text-foreground"
-              >
-                {copied ? (
-                  <Check className="h-3.5 w-3.5 text-green-500" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-              </button>
-            </div>
-          ) : (
-            <Button
-              variant="outline"
-              className="self-start gap-2"
-              onClick={() => invite.mutate()}
-              disabled={invite.isPending}
-            >
-              {invite.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="h-4 w-4" />
-              )}
-              Create invite link
-            </Button>
-          )}
-        </div>
-
         {/* Member list */}
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium">

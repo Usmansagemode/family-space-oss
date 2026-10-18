@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackersRouteImport } from './routes/trackers'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as InviteRouteImport } from './routes/invite'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ChartsRouteImport } from './routes/charts'
 import { Route as IndexRouteImport } from './routes/index'
@@ -34,11 +33,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InviteRoute = InviteRouteImport.update({
-  id: '/invite',
-  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
@@ -81,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/charts': typeof ChartsRoute
   '/import': typeof ImportRoute
-  '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/trackers': typeof TrackersRoute
@@ -94,7 +87,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/charts': typeof ChartsRoute
   '/import': typeof ImportRoute
-  '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/trackers': typeof TrackersRoute
@@ -108,7 +100,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/charts': typeof ChartsRoute
   '/import': typeof ImportRoute
-  '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
   '/trackers': typeof TrackersRoute
@@ -123,7 +114,6 @@ export interface FileRouteTypes {
     | '/'
     | '/charts'
     | '/import'
-    | '/invite'
     | '/onboarding'
     | '/settings'
     | '/trackers'
@@ -136,7 +126,6 @@ export interface FileRouteTypes {
     | '/'
     | '/charts'
     | '/import'
-    | '/invite'
     | '/onboarding'
     | '/settings'
     | '/trackers'
@@ -149,7 +138,6 @@ export interface FileRouteTypes {
     | '/'
     | '/charts'
     | '/import'
-    | '/invite'
     | '/onboarding'
     | '/settings'
     | '/trackers'
@@ -163,7 +151,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChartsRoute: typeof ChartsRoute
   ImportRoute: typeof ImportRoute
-  InviteRoute: typeof InviteRoute
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
   TrackersRoute: typeof TrackersRoute
@@ -194,13 +181,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/invite': {
-      id: '/invite'
-      path: '/invite'
-      fullPath: '/invite'
-      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import': {
@@ -259,7 +239,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChartsRoute: ChartsRoute,
   ImportRoute: ImportRoute,
-  InviteRoute: InviteRoute,
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
   TrackersRoute: TrackersRoute,

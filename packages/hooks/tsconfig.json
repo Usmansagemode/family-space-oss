@@ -6,7 +6,6 @@
     "lib": ["ES2022", "DOM"],
     "types": [],
     "paths": {
-      "@family/api": ["../api/src/index.ts"],
       "@family/supabase": ["../supabase/src/index.ts"],
       "@family/types": ["../types/src/index.ts"],
       "@family/utils": ["../utils/src/index.ts"]

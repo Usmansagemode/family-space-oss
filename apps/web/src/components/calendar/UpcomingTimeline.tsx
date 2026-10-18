@@ -60,12 +60,8 @@ export function UpcomingTimeline({ familyId }: Props) {
       })
       return { prev }
     },
-    onSuccess: (_data, item) => {
-      if (item.googleEventId) {
-        toast.success('Marked as done — remove the event from Google Calendar manually')
-      } else {
-        toast.success('Marked as done')
-      }
+    onSuccess: () => {
+      toast.success('Marked as done')
     },
     onError: (_err, _item, ctx) => {
       if (ctx?.prev) queryClient.setQueryData(upcomingTimelineQueryKey(familyId, todayKey), ctx.prev)

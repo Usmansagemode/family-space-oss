@@ -17,13 +17,6 @@ import {
 } from '@family/supabase'
 import { advanceDate, hasExplicitTime } from '@family/utils'
 import {
-  createCalendarEvent,
-  deleteCalendarEvent,
-  syncCalendarOnUpdate,
-  withGcalRetry,
-  GcalAuthError,
-} from '@family/api'
-import {
   useCalendarItems,
   useSpaces,
   calendarItemsQueryKeys,
@@ -31,7 +24,6 @@ import {
 import type { CalendarItem, Item, Recurrence, Space } from '@family/types'
 import { useIsDark } from '#/hooks/useIsDark'
 import { useAuthContext } from '#/contexts/auth'
-import { useBoardContext } from '#/contexts/board'
 import { AddItemSheet } from '#/components/board/AddItemSheet'
 import '@schedule-x/theme-default/dist/index.css'
 import './calendar.css'
@@ -110,9 +102,6 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
   const queryClient = useQueryClient()
   const isDark = useIsDark()
   const { user } = useAuthContext()
-  const { calendarId, providerToken } = useBoardContext()
-  const { refreshProviderToken } = useAuthContext()
-  const getToken = () => providerToken ? Promise.resolve(providerToken) : refreshProviderToken()
 
   const calendarSpaces = useMemo(
     () => spaces.filter((s): s is Space => (CALENDAR_SPACE_TYPES as readonly string[]).includes(s.type)),
@@ -208,41 +197,11 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
   }
 
   const completeMutation = useMutation({
-    mutationFn: async (item: Item) => {
-      let newEventId: string | null = null
+    mutationFn: (item: Item) => {
       if (item.recurrence && item.startDate) {
         const nextStart = advanceDate(item.startDate, item.recurrence)
         const nextEnd = item.endDate ? advanceDate(item.endDate, item.recurrence) : undefined
-        try {
-          if (calendarId && item.googleEventId) {
-            await withGcalRetry(getToken, refreshProviderToken, (token) =>
-              deleteCalendarEvent(token, calendarId, item.googleEventId!),
-            )
-          }
-          if (calendarId) {
-            const result = await withGcalRetry(getToken, refreshProviderToken, (token) =>
-              createCalendarEvent(token, calendarId, {
-                title: item.title,
-                startDate: nextStart,
-                endDate: nextEnd,
-              }),
-            )
-            newEventId = result?.id ?? null
-          }
-        } catch (err) {
-          if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-          else console.error('[gcal] complete sync failed:', err)
-        }
-        return advanceRecurringItem(item.id, nextStart, nextEnd, newEventId)
-      }
-      try {
-        if (calendarId && item.googleEventId) {
-          await withGcalRetry(getToken, refreshProviderToken, (token) =>
-            deleteCalendarEvent(token, calendarId, item.googleEventId!),
-          )
-        }
-      } catch (err) {
-        console.error('[gcal] complete sync failed:', err)
+        return advanceRecurringItem(item.id, nextStart, nextEnd)
       }
       return completeItem(item.id)
     },
@@ -261,42 +220,18 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       id,
-      existingEventId,
-      prevTitle,
       ...rest
     }: {
       id: string
-      existingEventId?: string
-      prevTitle?: string
       title?: string
       description?: string
       quantity?: string | null
       startDate?: Date
       endDate?: Date
       recurrence?: Recurrence | null
-    }) => {
-      let googleEventIdChange: string | null | undefined
-      try {
-        googleEventIdChange = await withGcalRetry(getToken, refreshProviderToken, (token) =>
-          syncCalendarOnUpdate(token, calendarId, {
-            existingEventId,
-            title: rest.title ?? prevTitle ?? '',
-            prevTitle: prevTitle ?? '',
-            startDate: rest.startDate,
-            endDate: rest.endDate,
-          }),
-        )
-      } catch (err) {
-        if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-        else console.error('[gcal] update sync failed:', err)
-      }
-      return updateItem(id, {
-        ...rest,
-        ...(googleEventIdChange !== undefined && { googleEventId: googleEventIdChange }),
-      })
-    },
+    }) => updateItem(id, rest),
     onSuccess: () => {
       invalidateCalendar()
       toast.success('Item updated')
@@ -306,19 +241,7 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
   })
 
   const removeMutation = useMutation({
-    mutationFn: async (item: Item) => {
-      try {
-        if (calendarId && item.googleEventId) {
-          await withGcalRetry(getToken, refreshProviderToken, (token) =>
-            deleteCalendarEvent(token, calendarId, item.googleEventId!),
-          )
-        }
-      } catch (err) {
-        if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-        else console.error('[gcal] delete sync failed:', err)
-      }
-      return deleteItemFn(item.id)
-    },
+    mutationFn: (item: Item) => deleteItemFn(item.id),
     onSuccess: (_, item) => {
       void queryClient.invalidateQueries({ queryKey: ['items', item.spaceId] })
       invalidateCalendar()
@@ -329,7 +252,7 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
   })
 
   const createMutation = useMutation({
-    mutationFn: async (input: {
+    mutationFn: (input: {
       title: string
       description?: string
       quantity?: string
@@ -337,24 +260,8 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
       endDate?: Date
       recurrence?: Recurrence
       spaceId: string
-    }) => {
-      let googleEventId: string | undefined
-      if (calendarId && input.startDate) {
-        try {
-          const result = await withGcalRetry(getToken, refreshProviderToken, (token) =>
-            createCalendarEvent(token, calendarId, {
-              title: input.title,
-              startDate: input.startDate!,
-              endDate: input.endDate,
-            }),
-          )
-          googleEventId = result?.id
-        } catch (err) {
-          if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-          else console.error('[gcal] create sync failed:', err)
-        }
-      }
-      return createItem({
+    }) =>
+      createItem({
         familyId,
         spaceId: input.spaceId,
         title: input.title,
@@ -362,9 +269,7 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
         startDate: input.startDate,
         endDate: input.endDate,
         recurrence: input.recurrence,
-        googleEventId,
-      })
-    },
+      }),
     onSuccess: (_, input) => {
       void queryClient.invalidateQueries({ queryKey: ['items', input.spaceId] })
       invalidateCalendar()
@@ -484,11 +389,7 @@ export function AppCalendar({ familyId }: AppCalendarProps) {
           note={isVirtual ? 'Editing this will update all future occurrences.' : undefined}
           onCreate={() => {}}
           onUpdate={(input) =>
-            updateMutation.mutate({
-              ...input,
-              existingEventId: selectedItem?.googleEventId,
-              prevTitle: selectedItem?.title,
-            })
+            updateMutation.mutate(input)
           }
           onComplete={(item) => completeMutation.mutate(item)}
           onDelete={(item) => removeMutation.mutate(item)}

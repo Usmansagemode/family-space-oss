@@ -15,7 +15,6 @@ export type Family = {
   currency: string
   /** BCP 47 locale e.g. 'en-US', 'en-GB' */
   locale: string
-  googleCalendarId?: string
   googleCalendarEmbedUrl?: string
   /** Null until the owner completes (or skips) the post-signup onboarding wizard */
   onboardingCompletedAt?: Date | null

@@ -16,7 +16,6 @@ export type Item = {
   completedAt?: Date
   completedBy?: string
   createdBy?: string
-  googleEventId?: string
   createdAt: Date
   updatedAt: Date
 }

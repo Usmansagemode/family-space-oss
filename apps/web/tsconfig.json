@@ -8,7 +8,6 @@
       "#/*": ["./src/*"],
       "content-collections": ["./.content-collections/generated"],
       "@/*": ["./src/*"],
-      "@family/api": ["../../packages/api/src/index.ts"],
       "@family/hooks": ["../../packages/hooks/src/index.ts"],
       "@family/supabase": ["../../packages/supabase/src/index.ts"],
       "@family/config": ["../../packages/config/src/index.ts"],

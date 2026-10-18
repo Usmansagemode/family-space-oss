@@ -207,21 +207,19 @@ function FamilyTab({
   family,
   userId,
 }: {
-  family: { id: string; name: string; currency: string; locale: string; googleCalendarId?: string; googleCalendarEmbedUrl?: string }
+  family: { id: string; name: string; currency: string; locale: string; googleCalendarEmbedUrl?: string }
   userId: string
 }) {
   const queryClient = useQueryClient()
   const [name, setName] = useState(family.name)
   const [currency, setCurrency] = useState(family.currency)
   const [locale, setLocale] = useState(family.locale)
-  const [calendarId, setCalendarId] = useState(family.googleCalendarId ?? '')
   const [embedUrl, setEmbedUrl] = useState(family.googleCalendarEmbedUrl ?? '')
 
   useEffect(() => {
     setName(family.name)
     setCurrency(family.currency)
     setLocale(family.locale)
-    setCalendarId(family.googleCalendarId ?? '')
     setEmbedUrl(family.googleCalendarEmbedUrl ?? '')
   }, [family])
 
@@ -231,7 +229,6 @@ function FamilyTab({
         name: name.trim() || 'Our Family',
         currency,
         locale,
-        googleCalendarId: calendarId.trim() || undefined,
         googleCalendarEmbedUrl: embedUrl.trim() || undefined,
       }),
     onSuccess: (updated) => {
@@ -287,15 +284,6 @@ function FamilyTab({
         <div className="border-t border-border pt-4">
           <p className="mb-3 text-sm font-medium">Google Calendar</p>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cal-id">Calendar ID</Label>
-              <Input
-                id="cal-id"
-                value={calendarId}
-                onChange={(e) => setCalendarId(e.target.value)}
-                placeholder="abc123@group.calendar.google.com"
-              />
-            </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="cal-embed">Embed URL</Label>
               <Input
@@ -1506,7 +1494,7 @@ function IntegrationsTab() {
 function AccountTab({ userId }: { userId: string }) {
   const { data: profile, isLoading } = useProfile(userId)
   const { saveName, saveAvatar } = useProfileMutations(userId)
-  const { user, providerToken, signInWithGoogle, signOut } = useAuthContext()
+  const { user, signOut } = useAuthContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState('')
@@ -1519,9 +1507,6 @@ function AccountTab({ userId }: { userId: string }) {
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const isGoogleLinked = user?.identities?.some((i) => i.provider === 'google') ?? false
-  // Token is absent when the refresh token was revoked or the user hasn't
-  // granted Calendar access yet (e.g. signed up via email then linked Google).
-  const calendarConnected = isGoogleLinked && !!providerToken
 
   async function handleLinkGoogle() {
     if (!supabase) return
@@ -1532,12 +1517,6 @@ function AccountTab({ userId }: { userId: string }) {
       setLinkingGoogle(false)
     }
     // On success, Supabase redirects to Google — no need to reset state
-  }
-
-  function handleReconnectCalendar() {
-    // Re-runs the full Google OAuth flow requesting offline access + Calendar scope.
-    // This replaces the revoked/missing refresh token with a fresh one.
-    signInWithGoogle()
   }
 
   useEffect(() => {
@@ -1715,18 +1694,10 @@ function AccountTab({ userId }: { userId: string }) {
             <span className="text-sm">Google</span>
           </div>
           {isGoogleLinked ? (
-            <div className="flex items-center gap-2">
-              {calendarConnected ? (
-                <Badge variant="secondary" className="gap-1">
-                  <Check className="h-3 w-3 text-emerald-500" />
-                  Calendar active
-                </Badge>
-              ) : (
-                <Button size="sm" variant="outline" onClick={handleReconnectCalendar}>
-                  Reconnect Calendar
-                </Button>
-              )}
-            </div>
+            <Badge variant="secondary" className="gap-1">
+              <Check className="h-3 w-3 text-emerald-500" />
+              Linked
+            </Badge>
           ) : (
             <Button size="sm" variant="outline" onClick={() => void handleLinkGoogle()} disabled={linkingGoogle}>
               {linkingGoogle ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Link'}

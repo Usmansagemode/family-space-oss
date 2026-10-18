@@ -9,57 +9,25 @@ import {
   moveItem,
   advanceRecurringItem,
 } from '@family/supabase'
-import {
-  createCalendarEvent,
-  deleteCalendarEvent,
-  syncCalendarOnUpdate,
-  withGcalRetry,
-  GcalAuthError,
-} from '@family/api'
 import { advanceDate, formatDate } from '@family/utils'
 import type { Item, Recurrence } from '@family/types'
 
-type ItemMutationOpts = {
-  calendarId: string | null
-  getToken: () => Promise<string | null>
-  refreshToken: () => Promise<string | null>
-}
-
 // Core hook — no context imports, fully portable.
-export function useItemMutationsCore(spaceId: string, familyId: string, opts: ItemMutationOpts) {
-  const { calendarId, getToken, refreshToken } = opts
+export function useItemMutationsCore(spaceId: string, familyId: string) {
   const queryClient = useQueryClient()
   const key = ['items', spaceId]
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: key })
 
   const create = useMutation({
-    mutationFn: async (input: {
+    mutationFn: (input: {
       title: string
       description?: string
       quantity?: string
       startDate?: Date
       endDate?: Date
       recurrence?: Recurrence
-    }) => {
-      let googleEventId: string | undefined
-      if (calendarId && input.startDate) {
-        try {
-          const result = await withGcalRetry(getToken, refreshToken, (token) =>
-            createCalendarEvent(token, calendarId, {
-              title: input.title,
-              startDate: input.startDate!,
-              endDate: input.endDate,
-            }),
-          )
-          googleEventId = result?.id
-        } catch (err) {
-          if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-          else console.error('[gcal] create event failed:', err)
-        }
-      }
-      return createItem({ familyId, spaceId, ...input, googleEventId })
-    },
+    }) => createItem({ familyId, spaceId, ...input }),
     onSuccess: () => {
       void invalidate()
       toast.success('Item added')
@@ -70,7 +38,7 @@ export function useItemMutationsCore(spaceId: string, familyId: string, opts: It
   })
 
   const update = useMutation({
-    mutationFn: async (input: {
+    mutationFn: (input: {
       id: string
       title?: string
       description?: string
@@ -78,37 +46,15 @@ export function useItemMutationsCore(spaceId: string, familyId: string, opts: It
       startDate?: Date
       endDate?: Date
       recurrence?: Recurrence | null
-    }) => {
-      const cached = queryClient
-        .getQueryData<Item[]>(key)
-        ?.find((i) => i.id === input.id)
-
-      let googleEventId: string | null | undefined
-      try {
-        googleEventId = await withGcalRetry(getToken, refreshToken, (token) =>
-          syncCalendarOnUpdate(token, calendarId, {
-            existingEventId: cached?.googleEventId,
-            title: input.title ?? cached?.title ?? '',
-            prevTitle: cached?.title ?? '',
-            startDate: input.startDate,
-            endDate: input.endDate,
-          }),
-        )
-      } catch (err) {
-        if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-        else console.error('[gcal] update sync failed:', err)
-      }
-
-      return updateItem(input.id, {
+    }) =>
+      updateItem(input.id, {
         title: input.title,
         description: input.description,
         quantity: input.quantity,
         startDate: input.startDate,
         endDate: input.endDate,
         recurrence: input.recurrence,
-        ...(googleEventId !== undefined && { googleEventId }),
-      })
-    },
+      }),
     onSuccess: () => {
       void invalidate()
       toast.success('Item updated')
@@ -119,41 +65,11 @@ export function useItemMutationsCore(spaceId: string, familyId: string, opts: It
   })
 
   const complete = useMutation({
-    mutationFn: async (item: Item) => {
-      let newEventId: string | null = null
+    mutationFn: (item: Item) => {
       if (item.recurrence && item.startDate) {
         const nextStart = advanceDate(item.startDate, item.recurrence)
         const nextEnd = item.endDate ? advanceDate(item.endDate, item.recurrence) : undefined
-        try {
-          if (calendarId && item.googleEventId) {
-            await withGcalRetry(getToken, refreshToken, (token) =>
-              deleteCalendarEvent(token, calendarId, item.googleEventId!),
-            )
-          }
-          if (calendarId) {
-            const result = await withGcalRetry(getToken, refreshToken, (token) =>
-              createCalendarEvent(token, calendarId, {
-                title: item.title,
-                startDate: nextStart,
-                endDate: nextEnd,
-              }),
-            )
-            newEventId = result?.id ?? null
-          }
-        } catch (err) {
-          if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-          else console.error('[gcal] complete sync failed:', err)
-        }
-        return advanceRecurringItem(item.id, nextStart, nextEnd, newEventId)
-      }
-      try {
-        if (calendarId && item.googleEventId) {
-          await withGcalRetry(getToken, refreshToken, (token) =>
-            deleteCalendarEvent(token, calendarId, item.googleEventId!),
-          )
-        }
-      } catch (err) {
-        console.error('[gcal] complete sync failed:', err)
+        return advanceRecurringItem(item.id, nextStart, nextEnd)
       }
       return completeItem(item.id)
     },
@@ -197,19 +113,7 @@ export function useItemMutationsCore(spaceId: string, familyId: string, opts: It
   })
 
   const remove = useMutation({
-    mutationFn: async (item: Item) => {
-      try {
-        if (calendarId && item.googleEventId) {
-          await withGcalRetry(getToken, refreshToken, (token) =>
-            deleteCalendarEvent(token, calendarId, item.googleEventId!),
-          )
-        }
-      } catch (err) {
-        if (err instanceof GcalAuthError) toast.error('Google Calendar disconnected — go to Settings → Account to reconnect.')
-        else console.error('[gcal] delete sync failed:', err)
-      }
-      return deleteItem(item.id)
-    },
+    mutationFn: (item: Item) => deleteItem(item.id),
     onMutate: async (item) => {
       await queryClient.cancelQueries({ queryKey: key })
       const prev = queryClient.getQueryData<Item[]>(key)

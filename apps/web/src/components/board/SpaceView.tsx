@@ -26,20 +26,17 @@ import { ItemDragOverlay } from './ItemDragOverlay'
 import { useSpaces } from '#/hooks/spaces/useSpaces'
 import { useSpaceMutations } from '#/hooks/spaces/useSpaceMutations'
 import { moveItem, reorderItems } from '#/lib/supabase/items'
-import { BoardProvider } from '#/contexts/board'
 import type { Space } from '#/entities/Space'
 import type { Item } from '#/entities/Item'
 
 type Props = {
   familyId: string
-  providerToken: string | null
-  calendarId: string | null
   typeFilter: 'person' | 'store'
 }
 
 type ActiveDragItem = { item: Item; spaceColor: string }
 
-export function SpaceView({ familyId, providerToken, calendarId, typeFilter }: Props) {
+export function SpaceView({ familyId, typeFilter }: Props) {
   const [addSpaceOpen, setAddSpaceOpen] = useState(false)
   const [focusedSpaceId, setFocusedSpaceId] = useState<string | null>(null)
   const [activeDragItem, setActiveDragItem] = useState<ActiveDragItem | null>(
@@ -196,11 +193,7 @@ export function SpaceView({ familyId, providerToken, calendarId, typeFilter }: P
   }
 
   return (
-    <BoardProvider
-      familyId={familyId}
-      providerToken={providerToken}
-      calendarId={calendarId}
-    >
+    <>
       <div className="flex h-full flex-col">
         <DndContext
           sensors={sensors}
@@ -302,6 +295,6 @@ export function SpaceView({ familyId, providerToken, calendarId, typeFilter }: P
           onClose={() => setFocusedSpaceId(null)}
         />
       )}
-    </BoardProvider>
+    </>
   )
 }

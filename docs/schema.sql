@@ -78,9 +78,7 @@ create table families (
   name                        text not null,
   currency                    text not null default 'USD',
   locale                      text not null default 'en-US',
-  google_calendar_id          text,
   google_calendar_embed_url   text,
-  google_refresh_token        text,
   onboarding_completed_at     timestamptz,
   created_at                  timestamptz default now(),
   updated_at                  timestamptz default now()
@@ -227,7 +225,6 @@ create table items (
   completed_at    timestamptz,
   completed_by    uuid references auth.users(id) on delete set null,
   created_by      uuid references auth.users(id) on delete set null,
-  google_event_id text,
   created_at      timestamptz default now(),
   updated_at      timestamptz default now()
 );

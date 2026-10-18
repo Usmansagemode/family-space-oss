@@ -52,7 +52,6 @@ function rowToItem(row: {
   recurrence: string | null
   completed: boolean
   completed_at: string | null
-  google_event_id: string | null
   sort_order: number
   created_at: string
   updated_at: string
@@ -69,7 +68,6 @@ function rowToItem(row: {
     recurrence: row.recurrence as Recurrence | undefined,
     completed: row.completed,
     completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
-    googleEventId: row.google_event_id ?? undefined,
     sortOrder: row.sort_order,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -98,7 +96,6 @@ export async function createItem(input: {
   startDate?: Date
   endDate?: Date
   recurrence?: Recurrence
-  googleEventId?: string
 }): Promise<Item> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
@@ -112,7 +109,6 @@ export async function createItem(input: {
       start_date: input.startDate ? toItemDate(input.startDate) : null,
       end_date: input.endDate ? toItemDate(input.endDate) : null,
       recurrence: input.recurrence ?? null,
-      google_event_id: input.googleEventId ?? null,
       sort_order: 0,
     })
     .select()
@@ -131,7 +127,6 @@ export async function updateItem(
     startDate: Date
     endDate: Date
     recurrence: Recurrence | null
-    googleEventId: string | null
   }>,
 ): Promise<Item> {
   const supabase = getSupabaseClient()
@@ -147,8 +142,6 @@ export async function updateItem(
   if (input.endDate !== undefined)
     dbInput['end_date'] = toItemDate(input.endDate)
   if (input.recurrence !== undefined) dbInput['recurrence'] = input.recurrence
-  if (input.googleEventId !== undefined)
-    dbInput['google_event_id'] = input.googleEventId
 
   const { data, error } = await supabase
     .from('items')
@@ -233,7 +226,6 @@ export async function advanceRecurringItem(
   id: string,
   nextStartDate: Date,
   nextEndDate?: Date,
-  googleEventId?: string | null,
 ): Promise<Item> {
   const supabase = getSupabaseClient()
   const dbInput: Record<string, unknown> = {
@@ -241,7 +233,6 @@ export async function advanceRecurringItem(
     end_date: nextEndDate ? toItemDate(nextEndDate) : null,
     updated_at: new Date().toISOString(),
   }
-  if (googleEventId !== undefined) dbInput['google_event_id'] = googleEventId
 
   const { data, error } = await supabase
     .from('items')

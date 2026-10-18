@@ -3,9 +3,6 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@family/api": [
-        "../../packages/api/src/index.ts"
-      ],
       "@family/config": [
         "../../packages/config/src/index.ts"
       ],

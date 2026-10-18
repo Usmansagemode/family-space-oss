@@ -33,10 +33,7 @@ export function EditItemModal({
   const [quantity, setQuantity] = useState('')
   const [description, setDescription] = useState('')
 
-  const { update, remove } = useItemMutationsCore(spaceId, familyId, {
-    calendarId: null,
-    getToken: () => Promise.resolve(null),
-  })
+  const { update, remove } = useItemMutationsCore(spaceId, familyId)
 
   // Reset form when modal opens with an item
   useEffect(() => {

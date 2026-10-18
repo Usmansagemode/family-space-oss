@@ -10,7 +10,6 @@ import {
 } from '#/components/ui/command'
 import { Dialog, DialogContent, DialogTitle } from '#/components/ui/dialog'
 import { AddItemSheet } from '#/components/board/AddItemSheet'
-import { BoardProvider } from '#/contexts/board'
 import { useSearchItems } from '#/hooks/items/useSearchItems'
 import { useItemMutations } from '#/hooks/items/useItemMutations'
 import type { SearchResult } from '#/hooks/items/useSearchItems'
@@ -21,16 +20,12 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   familyId: string
-  providerToken: string | null
-  calendarId: string | null
 }
 
 export function SearchDialog({
   open,
   onOpenChange,
   familyId,
-  providerToken,
-  calendarId,
 }: Props) {
   const [query, setQuery] = useState('')
   const debouncedQuery = useDebounce(query, 300)
@@ -142,17 +137,11 @@ export function SearchDialog({
 
       {/* Edit sheet — opens when a result is selected */}
       {selected && (
-        <BoardProvider
+        <SelectedItemSheet
+          result={selected}
           familyId={familyId}
-          providerToken={providerToken}
-          calendarId={calendarId}
-        >
-          <SelectedItemSheet
-            result={selected}
-            familyId={familyId}
-            onClose={() => setSelected(null)}
-          />
-        </BoardProvider>
+          onClose={() => setSelected(null)}
+        />
       )}
     </>
   )

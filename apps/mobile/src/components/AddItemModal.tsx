@@ -21,10 +21,7 @@ type Props = {
 export function AddItemModal({ spaceId, familyId, spaceColorAccent = '#3A7DB5', visible, onClose }: Props) {
   const [title, setTitle] = useState('')
   const [quantity, setQuantity] = useState('')
-  const { create } = useItemMutationsCore(spaceId, familyId, {
-    calendarId: null,
-    getToken: () => Promise.resolve(null),
-  })
+  const { create } = useItemMutationsCore(spaceId, familyId)
 
   function handleAdd() {
     const trimmed = title.trim()

@@ -25,10 +25,7 @@ export function SpaceCard({ space, onFocus }: Props) {
   const [editItem, setEditItem] = useState<Item | null>(null)
 
   const { data: items = [], isLoading } = useItems(space.id)
-  const { complete, reAdd } = useItemMutationsCore(space.id, space.familyId, {
-    calendarId: null,
-    getToken: () => Promise.resolve(null),
-  })
+  const { complete, reAdd } = useItemMutationsCore(space.id, space.familyId)
 
   const { base, accent, border } = getSpaceColors(space.color)
   const active = items.filter((i) => !i.completed)

@@ -33,7 +33,6 @@ function AuthGate() {
 }
 
 function FamilyBoard({ userId }: { userId: string }) {
-  const { providerToken } = useAuthContext()
   const { data: family, isLoading } = useUserFamily(userId)
 
   if (isLoading) return <BoardSkeleton />
@@ -42,8 +41,6 @@ function FamilyBoard({ userId }: { userId: string }) {
   return (
     <FamilyContent
       familyId={family.id}
-      providerToken={providerToken}
-      calendarId={family.googleCalendarId ?? null}
       embedUrl={family.googleCalendarEmbedUrl}
     />
   )
@@ -51,13 +48,9 @@ function FamilyBoard({ userId }: { userId: string }) {
 
 function FamilyContent({
   familyId,
-  providerToken,
-  calendarId,
   embedUrl,
 }: {
   familyId: string
-  providerToken: string | null
-  calendarId: string | null
   embedUrl?: string
 }) {
   const { tab: rawTab } = Route.useSearch()
@@ -77,8 +70,6 @@ function FamilyContent({
           <div className="min-h-0 flex-1">
             <SpaceView
               familyId={familyId}
-              providerToken={providerToken}
-              calendarId={calendarId}
               typeFilter="store"
             />
           </div>
@@ -88,22 +79,18 @@ function FamilyContent({
         <div className="min-h-0 flex-1">
           <SpaceView
             familyId={familyId}
-            providerToken={providerToken}
-            calendarId={calendarId}
             typeFilter="person"
           />
         </div>
       )}
       <div className={cn('min-h-0 flex-1', tab !== 'calendar' && 'hidden')}>
-        <CalendarView familyId={familyId} embedUrl={embedUrl} providerToken={providerToken} calendarId={calendarId} />
+        <CalendarView familyId={familyId} embedUrl={embedUrl} />
       </div>
 
       <SearchDialog
         open={searchOpen}
         onOpenChange={setSearchOpen}
         familyId={familyId}
-        providerToken={providerToken}
-        calendarId={calendarId}
       />
     </div>
   )

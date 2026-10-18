@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@family/api": "*",
     "@family/supabase": "*",
     "@family/types": "*",
     "@family/utils": "*"

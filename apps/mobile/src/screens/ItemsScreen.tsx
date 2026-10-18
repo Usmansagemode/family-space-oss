@@ -24,10 +24,7 @@ export function ItemsScreen({ space, onBack }: Props) {
   const [showAdd, setShowAdd] = useState(false)
   const [editItem, setEditItem] = useState<Item | null>(null)
   const { data: items = [], isLoading, refetch } = useItems(space.id)
-  const { complete, reAdd } = useItemMutationsCore(space.id, space.familyId, {
-    calendarId: null,
-    getToken: () => Promise.resolve(null),
-  })
+  const { complete, reAdd } = useItemMutationsCore(space.id, space.familyId)
 
   const { base, accent, border } = getSpaceColors(space.color)
   const active = items.filter((i) => !i.completed)

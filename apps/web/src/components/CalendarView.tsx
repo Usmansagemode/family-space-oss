@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { AppCalendarLazy } from '#/components/calendar/AppCalendarLazy'
-import { BoardProvider } from '#/contexts/board'
 import { Button } from '#/components/ui/button'
 
 const STORAGE_KEY = 'calendar-view'
@@ -29,11 +28,9 @@ function isSafeEmbedUrl(url: string): boolean {
 type Props = {
   familyId: string
   embedUrl?: string
-  providerToken: string | null
-  calendarId: string | null
 }
 
-export function CalendarView({ familyId, embedUrl, providerToken, calendarId }: Props) {
+export function CalendarView({ familyId, embedUrl }: Props) {
   const safeEmbedUrl = embedUrl && isSafeEmbedUrl(embedUrl) ? embedUrl : undefined
   // Start with 'app' on the server; hydrate from localStorage once mounted on the client.
   // This avoids a hydration mismatch and a ReferenceError in SSR environments.
@@ -93,9 +90,7 @@ export function CalendarView({ familyId, embedUrl, providerToken, calendarId }: 
             loading="lazy"
           />
         ) : (
-          <BoardProvider familyId={familyId} providerToken={providerToken} calendarId={calendarId}>
-            <AppCalendarLazy familyId={familyId} />
-          </BoardProvider>
+          <AppCalendarLazy familyId={familyId} />
         )}
       </div>
     </div>

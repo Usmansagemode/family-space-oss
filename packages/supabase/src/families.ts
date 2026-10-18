@@ -8,7 +8,6 @@ function mapFamily(data: {
   name: string
   currency?: string | null
   locale?: string | null
-  google_calendar_id: string | null
   google_calendar_embed_url?: string | null
   onboarding_completed_at?: string | null
   created_at: string
@@ -19,7 +18,6 @@ function mapFamily(data: {
     name: data.name,
     currency: data.currency ?? 'USD',
     locale: data.locale ?? 'en-US',
-    googleCalendarId: data.google_calendar_id ?? undefined,
     googleCalendarEmbedUrl: data.google_calendar_embed_url ?? undefined,
     onboardingCompletedAt: data.onboarding_completed_at
       ? new Date(data.onboarding_completed_at)
@@ -47,7 +45,6 @@ export async function updateFamily(
     name?: string
     currency?: string
     locale?: string
-    googleCalendarId?: string
     googleCalendarEmbedUrl?: string
     onboardingCompletedAt?: Date | string | null
   },
@@ -57,8 +54,6 @@ export async function updateFamily(
   if (input.name !== undefined) dbInput['name'] = input.name
   if (input.currency !== undefined) dbInput['currency'] = input.currency
   if (input.locale !== undefined) dbInput['locale'] = input.locale
-  if (input.googleCalendarId !== undefined)
-    dbInput['google_calendar_id'] = input.googleCalendarId || null
   if (input.googleCalendarEmbedUrl !== undefined)
     dbInput['google_calendar_embed_url'] = input.googleCalendarEmbedUrl || null
   if (input.onboardingCompletedAt !== undefined) {

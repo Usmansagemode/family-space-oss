@@ -57,14 +57,10 @@ No new GitHub repo or Vercel project needed beyond your existing one. Vercel sup
 3. Before clicking Deploy, set **Root Directory** to `apps/web`
 4. Add environment variables (Settings → Environment Variables):
    ```
-   VITE_SUPABASE_URL      # bundled into client (public)
-   VITE_SUPABASE_ANON_KEY # bundled into client (public)
-   GOOGLE_CLIENT_ID       # server-only — never use VITE_ prefix
-   GOOGLE_CLIENT_SECRET   # server-only — never use VITE_ prefix
+   VITE_SUPABASE_URL          # bundled into client (public)
+   VITE_SUPABASE_ANON_KEY     # bundled into client (public)
+   SUPABASE_SERVICE_ROLE_KEY  # server-only (Delete account, Remove member) — never use VITE_ prefix
    ```
-   `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are used exclusively in the server-side
-   token-refresh function (`src/lib/server/refresh-google-token.ts`) and are never bundled
-   into the client JS. If you have any `VITE_GOOGLE_*` vars set in Vercel, they can be deleted.
 5. Click **Deploy**
 
 Vercel auto-detects Vite and sets the correct build command (`vite build`) and output directory.

@@ -164,3 +164,7 @@ See [deployment.md](deployment.md) for the Vercel settings and the mobile app.
    `select * from schema_migrations order by version;` shows what has run.
 
 `scripts/setup.sh` never re-applies `docs/schema.sql` to an existing database.
+
+## Moving data from family-space
+
+See [migrating-from-family-space.md](migrating-from-family-space.md).

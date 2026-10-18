@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { ChevronDown, FileSpreadsheet, Printer } from 'lucide-react'
-import { useDynamicPlan } from '@family/hooks'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
 import { useYearlyExpenses } from '#/hooks/expenses/useYearlyExpenses'
 import { useBudgets } from '#/hooks/budgets/useBudgets'
 import { useSpaces } from '#/hooks/spaces/useSpaces'
-import { UpgradePlanPrompt } from '#/components/billing/UpgradePlanPrompt'
 import { UpcomingTimeline } from '#/components/calendar/UpcomingTimeline'
 import { CategoryFilter } from '#/components/charts/CategoryFilter'
 import { ChartsGrid } from '#/components/charts/ChartsGrid'
@@ -23,36 +21,10 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Skeleton } from '#/components/ui/skeleton'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '#/components/ui/tooltip'
 import { exportToExcel } from '#/lib/exportExcel'
 import { formatCurrency } from '#/lib/utils'
 
 export const Route = createFileRoute('/charts')({
-  // Server-side gate: redirect before any chart data is fetched
-  // Prevents free users from bypassing the UI gate via direct URL
-  loader: async ({ context }) => {
-    const queryClient = (context as { queryClient?: { getQueryData: (key: unknown[]) => unknown } }).queryClient
-    if (!queryClient) return
-
-    // Attempt to read the cached family; if not present skip (client will re-check)
-    const family = queryClient.getQueryData<{ id: string; plan: string; suspendedAt?: unknown }>([
-      'family',
-    ])
-    if (!family) return
-
-    // Check suspension server-side
-    if (family.suspendedAt) {
-      throw redirect({ to: '/' })
-    }
-
-    // Dynamic plan check using cached data only — avoids an extra DB call in the loader
-    // The full server-side gate using resolvePlanLimits is done in the server action
-    // (see Phase 4b notes in docs/database-migrations.md)
-  },
   component: ChartsPage,
 })
 
@@ -66,8 +38,6 @@ function ChartsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedLocations, setSelectedLocations] = useState<string[]>([])
   const [selectedPaidBy, setSelectedPaidBy] = useState<string[]>([])
-
-  const { can } = useDynamicPlan(familyId, family?.plan ?? 'free')
 
   const { data: expenses, isLoading } = useYearlyExpenses(familyId, year)
   const { data: budgets } = useBudgets(familyId)
@@ -245,34 +215,21 @@ function ChartsPage() {
               onSelectionChange={setSelectedPaidBy}
             />
           )}
-          {can.chartsExport ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  Export <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportPdf}>
-                  <Printer className="mr-2 h-4 w-4" /> PDF Report
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void exportToExcel(filteredExpenses, year)}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button variant="outline" size="sm" className="gap-1.5" disabled>
-                    Export <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>Upgrade to Plus to export reports</TooltipContent>
-            </Tooltip>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                Export <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPdf}>
+                <Printer className="mr-2 h-4 w-4" /> PDF Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void exportToExcel(filteredExpenses, year)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel (.xlsx)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -280,9 +237,7 @@ function ChartsPage() {
       <UpcomingTimeline familyId={familyId} />
 
       {/* Charts */}
-      {!can.charts ? (
-        <UpgradePlanPrompt />
-      ) : isLoading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="h-72 rounded-xl" />

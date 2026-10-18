@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { createExpense, createIncomeEntry, updateRecurringTransaction } from '@family/supabase'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
-import { useDynamicPlan } from '@family/hooks'
 import { useSpaces } from '#/hooks/spaces/useSpaces'
 import { useExpenses } from '#/hooks/expenses/useExpenses'
 import { useExpenseMutations } from '#/hooks/expenses/useExpenseMutations'
@@ -99,7 +98,6 @@ function ExpensesPage() {
   const familyId = family?.id ?? ''
   const currency = family?.currency
   const locale = family?.locale
-  const { can } = useDynamicPlan(familyId, family?.plan ?? 'free')
 
   const prevMonth = month === 1 ? 12 : month - 1
   const prevYear = month === 1 ? year - 1 : year
@@ -424,7 +422,6 @@ function ExpensesPage() {
                   if (t) { setEditingRecurring(t); setRecurringDialogOpen(true) }
                 }}
                 onFlagClick={handleFlagClick}
-                showDuplicates={can.expensesDuplicates}
               />
             </>
           )}

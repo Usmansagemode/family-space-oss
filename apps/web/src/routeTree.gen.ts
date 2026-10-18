@@ -10,9 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackersRouteImport } from './routes/trackers'
-import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as InviteRouteImport } from './routes/invite'
 import { Route as ImportRouteImport } from './routes/import'
@@ -28,19 +26,9 @@ const TrackersRoute = TrackersRouteImport.update({
   path: '/trackers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -95,9 +83,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
-  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
-  '/terms': typeof TermsRoute
   '/trackers': typeof TrackersRoute
   '/expenses/import': typeof ExpensesImportRoute
   '/splits/$groupId': typeof SplitsGroupIdRoute
@@ -110,9 +96,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
-  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
-  '/terms': typeof TermsRoute
   '/trackers': typeof TrackersRoute
   '/expenses/import': typeof ExpensesImportRoute
   '/splits/$groupId': typeof SplitsGroupIdRoute
@@ -126,9 +110,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/invite': typeof InviteRoute
   '/onboarding': typeof OnboardingRoute
-  '/privacy': typeof PrivacyRoute
   '/settings': typeof SettingsRoute
-  '/terms': typeof TermsRoute
   '/trackers': typeof TrackersRoute
   '/expenses/import': typeof ExpensesImportRoute
   '/splits/$groupId': typeof SplitsGroupIdRoute
@@ -143,9 +125,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/invite'
     | '/onboarding'
-    | '/privacy'
     | '/settings'
-    | '/terms'
     | '/trackers'
     | '/expenses/import'
     | '/splits/$groupId'
@@ -158,9 +138,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/invite'
     | '/onboarding'
-    | '/privacy'
     | '/settings'
-    | '/terms'
     | '/trackers'
     | '/expenses/import'
     | '/splits/$groupId'
@@ -173,9 +151,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/invite'
     | '/onboarding'
-    | '/privacy'
     | '/settings'
-    | '/terms'
     | '/trackers'
     | '/expenses/import'
     | '/splits/$groupId'
@@ -189,9 +165,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   InviteRoute: typeof InviteRoute
   OnboardingRoute: typeof OnboardingRoute
-  PrivacyRoute: typeof PrivacyRoute
   SettingsRoute: typeof SettingsRoute
-  TermsRoute: typeof TermsRoute
   TrackersRoute: typeof TrackersRoute
   ExpensesImportRoute: typeof ExpensesImportRoute
   SplitsGroupIdRoute: typeof SplitsGroupIdRoute
@@ -208,25 +182,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/settings': {
       id: '/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -301,9 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   InviteRoute: InviteRoute,
   OnboardingRoute: OnboardingRoute,
-  PrivacyRoute: PrivacyRoute,
   SettingsRoute: SettingsRoute,
-  TermsRoute: TermsRoute,
   TrackersRoute: TrackersRoute,
   ExpensesImportRoute: ExpensesImportRoute,
   SplitsGroupIdRoute: SplitsGroupIdRoute,

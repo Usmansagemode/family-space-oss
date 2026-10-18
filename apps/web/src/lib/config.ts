@@ -18,15 +18,3 @@ export const DEFAULT_CATEGORIES = [
   { name: 'Gifts',     color: CHART_COLORS[5],        icon: 'Gift' },            // rose
   { name: 'Misc',      color: 'oklch(0.82 0.05 270)', icon: 'MoreHorizontal' },  // muted periwinkle
 ] as const
-
-/** Pro-only features — check family plan before rendering or running these. */
-export const PRO_FEATURES = [
-  'yearly-charts',
-  'per-member-charts',
-  'pdf-import',
-  'excel-export',
-  'trackers',
-  'google-calendar',
-] as const
-
-export type ProFeature = (typeof PRO_FEATURES)[number]

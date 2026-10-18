@@ -36,7 +36,6 @@ type Props = {
   onBulkUpdate: (ids: string[], patch: Patch) => void
   onClickRecurring?: (recurringTransactionId: string) => void
   onFlagClick?: (flagged: DuplicateEntry, matches: DuplicateEntry[]) => void
-  showDuplicates?: boolean
 }
 
 export function ExpenseTable({
@@ -52,7 +51,6 @@ export function ExpenseTable({
   onBulkUpdate,
   onClickRecurring,
   onFlagClick,
-  showDuplicates = false,
 }: Props) {
   const [sortField, setSortField] = useState<SortField>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -64,8 +62,8 @@ export function ExpenseTable({
   }
 
   const duplicateMap = useMemo(
-    () => showDuplicates ? detectDuplicates(expenses) : new Map(),
-    [expenses, showDuplicates],
+    () => detectDuplicates(expenses),
+    [expenses],
   )
 
   const sorted = useMemo(() => {

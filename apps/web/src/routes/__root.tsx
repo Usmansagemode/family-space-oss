@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { AlertTriangle } from 'lucide-react'
 import { Toaster } from '#/components/ui/sonner'
 import { TooltipProvider } from '#/components/ui/tooltip'
 import { Header } from '#/components/Header'
@@ -16,7 +15,6 @@ import { AppNav } from '#/components/AppNav'
 import { AuthProvider } from '#/contexts/auth'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
-import { useBannedCheck } from '#/hooks/auth/useBannedCheck'
 import { MobileNavProvider } from '#/contexts/mobile-nav'
 
 import TanStackQueryProvider from '#/integrations/tanstack-query/root-provider'
@@ -52,56 +50,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   shellComponent: RootDocument,
 })
 
-function SuspendedOverlay({ reason }: { reason: string | null }) {
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-        <AlertTriangle className="h-7 w-7 text-destructive" />
-      </div>
-      <h1 className="text-2xl font-bold">Account Suspended</h1>
-      <p className="max-w-sm text-muted-foreground">
-        {reason
-          ? reason
-          : 'Your family account has been suspended. Please contact support for assistance.'}
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Email:{' '}
-        <a href="mailto:support@familyspace.app" className="underline">
-          support@familyspace.app
-        </a>
-      </p>
-    </div>
-  )
-}
-
-function BannedOverlay({ reason }: { reason: string | null }) {
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-        <AlertTriangle className="h-7 w-7 text-destructive" />
-      </div>
-      <h1 className="text-2xl font-bold">Account Suspended</h1>
-      <p className="max-w-sm text-muted-foreground">
-        {reason
-          ? reason
-          : 'Your account has been suspended. Please contact support for assistance.'}
-      </p>
-      <p className="text-sm text-muted-foreground">
-        Email:{' '}
-        <a href="mailto:support@familyspace.app" className="underline">
-          support@familyspace.app
-        </a>
-      </p>
-    </div>
-  )
-}
-
-const PUBLIC_PATHS = ['/', '/privacy', '/terms']
+const PUBLIC_PATHS = ['/']
 
 function AuthedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext()
   const { data: family } = useUserFamily(user?.id)
-  const { banned, banReason } = useBannedCheck(user?.id)
   const navigate = useNavigate()
   const { location } = useRouterState()
   const isPublicRoute =
@@ -127,8 +80,6 @@ function AuthedLayout({ children }: { children: React.ReactNode }) {
       family &&
       !family.onboardingCompletedAt &&
       !isOnboarding &&
-      location.pathname !== '/privacy' &&
-      location.pathname !== '/terms' &&
       !location.pathname.startsWith('/invite')
     ) {
       void navigate({ to: '/onboarding' })
@@ -140,16 +91,6 @@ function AuthedLayout({ children }: { children: React.ReactNode }) {
   if (!user) {
     if (isPublicRoute) return <main className="flex-1 overflow-auto">{children}</main>
     return null
-  }
-
-  // User banned — sign out already triggered by useBannedCheck
-  if (banned) {
-    return <BannedOverlay reason={banReason} />
-  }
-
-  // Family suspended — show full-screen block instead of app content
-  if (family?.suspendedAt) {
-    return <SuspendedOverlay reason={(family as { suspendReason?: string | null }).suspendReason ?? null} />
   }
 
   // Onboarding wizard: full-screen, no nav chrome

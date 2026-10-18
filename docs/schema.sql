@@ -2,6 +2,7 @@
 -- FAMILY SPACE — COMPLETE DATABASE SETUP
 -- Safe to re-run: drops everything first, then rebuilds clean.
 -- Run the entire script in one shot in Supabase SQL Editor.
+-- NEVER run on a database with data you want to keep — it drops all tables.
 -- ================================================================
 
 
@@ -13,7 +14,6 @@ drop trigger if exists on_auth_user_created        on auth.users;
 
 drop function if exists handle_new_user()                             cascade;
 drop function if exists set_item_created_by()                         cascade;
-drop function if exists check_split_group_limit()                     cascade;
 drop function if exists prevent_active_system_space_delete()          cascade;
 drop function if exists auto_sort_order_spaces()                      cascade;
 drop function if exists auto_sort_order_categories()                  cascade;
@@ -29,9 +29,6 @@ drop function if exists update_updated_at()                  cascade;
 
 drop table if exists schema_migrations        cascade;
 drop table if exists activity_log             cascade;
-drop table if exists admin_audit_log          cascade;
-drop table if exists family_feature_overrides cascade;
-drop table if exists plan_features            cascade;
 drop table if exists split_shares      cascade;
 drop table if exists split_settlements cascade;
 drop table if exists split_expenses    cascade;
@@ -70,10 +67,6 @@ create table profiles (
   name       text,
   email      text,
   avatar_url text,
-  is_admin   boolean not null default false,
-  banned_at  timestamptz,
-  banned_by  uuid references auth.users(id) on delete set null,
-  ban_reason text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -81,18 +74,11 @@ create table profiles (
 create table families (
   id                          uuid primary key default gen_random_uuid(),
   name                        text not null,
-  plan                        text not null default 'free' check (plan in ('free', 'plus', 'pro')),
   currency                    text not null default 'USD',
   locale                      text not null default 'en-US',
   google_calendar_id          text,
   google_calendar_embed_url   text,
   google_refresh_token        text,
-  stripe_customer_id          text,
-  stripe_subscription_id      text,
-  stripe_subscription_status  text,
-  suspended_at                timestamptz,
-  suspended_by                uuid references auth.users(id) on delete set null,
-  suspend_reason              text,
   onboarding_completed_at     timestamptz,
   created_at                  timestamptz default now(),
   updated_at                  timestamptz default now()
@@ -118,42 +104,6 @@ create table invites (
   created_by  uuid references auth.users(id) on delete set null,
   accepted_at timestamptz,
   accepted_by uuid references auth.users(id) on delete set null,
-  created_at  timestamptz default now()
-);
-
--- Plan feature matrix — one row per (plan, feature_key).
--- Managed exclusively by the admin app via service role.
-create table plan_features (
-  id          uuid primary key default gen_random_uuid(),
-  plan        text not null check (plan in ('free', 'plus', 'pro')),
-  feature_key text not null,
-  value       jsonb not null,
-  updated_at  timestamptz default now(),
-  unique (plan, feature_key)
-);
-
--- Per-family overrides that win over plan_features defaults.
--- Set by admin to grant/restrict features for specific families.
-create table family_feature_overrides (
-  id          uuid primary key default gen_random_uuid(),
-  family_id   uuid not null references families(id) on delete cascade,
-  feature_key text not null,
-  value       jsonb not null default '{}',
-  note        text,
-  created_by  uuid references auth.users(id) on delete set null,
-  updated_at  timestamptz default now(),
-  created_at  timestamptz default now(),
-  unique (family_id, feature_key)
-);
-
--- Immutable audit trail for all admin actions.
-create table admin_audit_log (
-  id          uuid primary key default gen_random_uuid(),
-  admin_id    uuid references auth.users(id) on delete set null,
-  action      text not null,
-  target_type text not null check (target_type in ('family', 'user', 'invite', 'feature_flag')),
-  target_id   uuid,
-  payload     jsonb not null default '{}',
   created_at  timestamptz default now()
 );
 
@@ -195,7 +145,7 @@ create table categories (
 );
 
 -- ----------------------------------------------------------------
--- RECURRING TRANSACTIONS (Pro feature)
+-- RECURRING TRANSACTIONS
 -- Unified recurring template for both expenses and income.
 -- direction = 'expense' → generates into expenses table
 -- direction = 'income'  → generates into income_entries table
@@ -417,11 +367,6 @@ grant select, insert, update, delete  on split_expenses       to authenticated;
 grant select, insert, update, delete  on split_shares         to authenticated;
 grant select, insert, update, delete  on split_settlements    to authenticated;
 grant select, insert                  on activity_log         to authenticated;
--- plan_features: web app needs SELECT to resolve useDynamicPlan
-grant select                          on plan_features              to authenticated;
--- family_feature_overrides: web app needs SELECT to resolve per-family overrides
-grant select                          on family_feature_overrides   to authenticated;
--- admin tables: service role only (no user grants needed — bypasses RLS)
 
 
 -- ----------------------------------------------------------------
@@ -446,8 +391,6 @@ create trigger trg_items_updated_at           before update on items           f
 create trigger trg_trackers_updated_at        before update on trackers        for each row execute function update_updated_at();
 create trigger trg_split_groups_updated_at          before update on split_groups          for each row execute function update_updated_at();
 create trigger trg_split_expenses_updated_at        before update on split_expenses        for each row execute function update_updated_at();
-create trigger trg_plan_features_updated_at         before update on plan_features         for each row execute function update_updated_at();
-create trigger trg_family_feature_overrides_updated_at before update on family_feature_overrides for each row execute function update_updated_at();
 
 
 -- ----------------------------------------------------------------
@@ -552,57 +495,6 @@ $$;
 create trigger log_item_completed_trigger
   after update on items
   for each row execute function log_item_completed();
-
-
--- ----------------------------------------------------------------
--- PART 6c: SPLIT GROUP LIMIT TRIGGER
--- Enforces splitGroupLimit from plan_features / family_feature_overrides
--- before any INSERT into split_groups, so it cannot be bypassed via
--- the Supabase client directly.
--- ----------------------------------------------------------------
-
-create or replace function check_split_group_limit()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare
-  v_plan        text;
-  v_limit_val   jsonb;
-  v_group_limit int;
-  v_group_count int;
-begin
-  select plan into v_plan from families where id = NEW.family_id;
-
-  -- Per-family override wins over plan default
-  select value into v_limit_val
-  from family_feature_overrides
-  where family_id = NEW.family_id and feature_key = 'splits.groupLimit';
-
-  if v_limit_val is null then
-    select value into v_limit_val
-    from plan_features
-    where plan = v_plan and feature_key = 'splits.groupLimit';
-  end if;
-
-  -- null value or missing row = unlimited
-  if v_limit_val is null or (v_limit_val->>'limit') is null then
-    return NEW;
-  end if;
-
-  v_group_limit := (v_limit_val->>'limit')::int;
-
-  select count(*) into v_group_count
-  from split_groups where family_id = NEW.family_id;
-
-  if v_group_count >= v_group_limit then
-    raise exception 'split_group_limit_reached: this family has reached the % split group limit for the % plan', v_group_limit, v_plan;
-  end if;
-
-  return NEW;
-end;
-$$;
-
-create trigger check_split_group_limit_trigger
-  before insert on split_groups
-  for each row execute function check_split_group_limit();
 
 
 -- ----------------------------------------------------------------
@@ -798,38 +690,8 @@ $$;
 create or replace function accept_invite(p_token uuid, p_user_id uuid, p_family_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
 declare
-  v_name         text;
-  v_plan         text;
-  v_member_count int;
-  v_limit_val    jsonb;
-  v_member_limit int;
+  v_name text;
 begin
-  -- Enforce member limits — reads from plan_features/family_feature_overrides
-  -- so admin changes take effect immediately without a code deploy.
-  select plan into v_plan from families where id = p_family_id;
-
-  -- Per-family override wins over plan default
-  select value into v_limit_val
-  from family_feature_overrides
-  where family_id = p_family_id and feature_key = 'members.limit';
-
-  if v_limit_val is null then
-    select value into v_limit_val
-    from plan_features
-    where plan = v_plan and feature_key = 'members.limit';
-  end if;
-
-  -- null value or missing row = unlimited
-  if v_limit_val is not null and (v_limit_val->>'limit') is not null then
-    v_member_limit := (v_limit_val->>'limit')::int;
-
-    select count(*) into v_member_count
-    from user_families where family_id = p_family_id;
-
-    if v_member_count >= v_member_limit then
-      raise exception 'member_limit_reached: this family has reached the % member limit for the % plan', v_member_limit, v_plan;
-    end if;
-  end if;
   insert into profiles (id, name, email, avatar_url)
   select id, coalesce(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name'), email, raw_user_meta_data->>'avatar_url'
   from auth.users where id = p_user_id
@@ -904,9 +766,6 @@ alter table split_participants        enable row level security;
 alter table split_expenses            enable row level security;
 alter table split_shares              enable row level security;
 alter table split_settlements         enable row level security;
-alter table plan_features             enable row level security;
-alter table family_feature_overrides  enable row level security;
-alter table admin_audit_log           enable row level security;
 
 
 -- ----------------------------------------------------------------
@@ -1108,16 +967,6 @@ create policy "activity_log_select" on activity_log
 create policy "activity_log_insert" on activity_log
   for insert to authenticated with check (is_family_member(family_id));
 
--- plan_features — read-only for authenticated users; writes via service role only
-create policy "plan_features_select" on plan_features
-  for select to authenticated using (true);
-
--- family_feature_overrides — families can read their own overrides; writes via service role only
-create policy "family_feature_overrides_select" on family_feature_overrides
-  for select to authenticated using (is_family_member(family_id));
-
--- admin_audit_log — no direct user access; service role only
-
 
 -- ----------------------------------------------------------------
 -- PART 11: INDEXES
@@ -1270,34 +1119,3 @@ create policy "avatars_update"
 create policy "avatars_select"
   on storage.objects for select to public
   using (bucket_id = 'avatars');
-
--- ----------------------------------------------------------------
--- PART 13: SEED — plan_features defaults
--- 5 features × 3 plans = 15 rows.
--- These are the baseline values; the admin panel can update them
--- at any time via the feature-flags UI (upsert with onConflict).
--- ----------------------------------------------------------------
-
-insert into plan_features (plan, feature_key, value) values
-  -- free
-  ('free', 'members.limit',       '{"limit": 3}'),
-  ('free', 'splits.groupLimit',   '{"limit": 1}'),
-  ('free', 'charts',              '{"enabled": false}'),
-  ('free', 'charts.export',       '{"enabled": false}'),
-  ('free', 'import.ai',           '{"enabled": false}'),
-  ('free', 'expenses.duplicates', '{"enabled": false}'),
-  -- plus
-  ('plus', 'members.limit',       '{"limit": 5}'),
-  ('plus', 'splits.groupLimit',   '{"limit": null}'),
-  ('plus', 'charts',              '{"enabled": true}'),
-  ('plus', 'charts.export',       '{"enabled": true}'),
-  ('plus', 'import.ai',           '{"enabled": false}'),
-  ('plus', 'expenses.duplicates', '{"enabled": true}'),
-  -- pro
-  ('pro',  'members.limit',       '{"limit": null}'),
-  ('pro',  'splits.groupLimit',   '{"limit": null}'),
-  ('pro',  'charts',              '{"enabled": true}'),
-  ('pro',  'charts.export',       '{"enabled": true}'),
-  ('pro',  'import.ai',           '{"enabled": true}'),
-  ('pro',  'expenses.duplicates', '{"enabled": true}')
-on conflict (plan, feature_key) do nothing;

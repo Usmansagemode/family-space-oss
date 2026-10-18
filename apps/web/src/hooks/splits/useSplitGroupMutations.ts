@@ -9,12 +9,8 @@ export function useSplitGroupMutations(familyId: string) {
   const create = useMutation({
     mutationFn: createSplitGroup,
     onSuccess: invalidate,
-    onError: (err: Error) => {
-      if (err.message.includes('split_group_limit_reached')) {
-        toast.error('Group limit reached. Upgrade your plan to create more split groups.')
-      } else {
-        toast.error('Failed to create group')
-      }
+    onError: () => {
+      toast.error('Failed to create group')
     },
   })
 

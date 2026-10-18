@@ -72,8 +72,7 @@ export const deleteAccount = createServerFn({ method: 'POST' })
 
     try {
       // Handles: unlink system person spaces → delete owned families → delete auth user.
-      // Passing user.id as adminId records a self-service audit trail.
-      await deleteUserCompletely(user.id, user.id)
+      await deleteUserCompletely(user.id)
     } catch (err) {
       // Log server-side so partially-deleted state (families gone, auth user still alive)
       // is observable in server logs and recoverable by support.

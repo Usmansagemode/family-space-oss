@@ -95,34 +95,7 @@ export type { RawActivityLog } from './activity'
 export { createInvite, getInviteByToken, acceptInvite } from './invites'
 export type { InviteInfo } from './invites'
 
-export {
-  fetchPlatformStats,
-  fetchAllFamilies,
-  fetchFamilyAdmin,
-  updateFamilyPlan,
-  suspendFamily,
-  unsuspendFamily,
-  fetchAllUsers,
-  fetchUserAdmin,
-  banUser,
-  unbanUser,
-  promoteUserToAdmin,
-  demoteAdminUser,
-  fetchPlanFeatures,
-  updatePlanFeature,
-  fetchFamilyFeatureOverrides,
-  setFamilyFeatureOverride,
-  removeFamilyFeatureOverride,
-  fetchAllInvites,
-  revokeInvite,
-  fetchAdminAuditLog,
-  deleteFamilyCompletely,
-  deleteUserCompletely,
-  fetchFamilyMembersAdmin,
-  fetchUserFamiliesAdmin,
-} from './admin'
-export type { AdminFamilyMember, AdminUserFamily } from './admin'
-export type { AdminInvite } from './admin'
+export { deleteUserCompletely } from './account'
 
 export {
   fetchSplitGroups,

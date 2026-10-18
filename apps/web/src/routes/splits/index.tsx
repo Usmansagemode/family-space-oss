@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { Lock, Plus, SplitSquareVertical, Trash2 } from 'lucide-react'
+import { Plus, SplitSquareVertical, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SplitGroup } from '@family/types'
-import { useDynamicPlan } from '@family/hooks'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
 import { useSplitGroups } from '#/hooks/splits/useSplitGroups'
@@ -21,16 +20,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '#/components/ui/alert-dialog'
-import { UpgradePlanDialog } from '#/components/billing/UpgradePlanPrompt'
 import { BorderBeam } from '#/components/ui/border-beam'
 import { Button } from '#/components/ui/button'
 import { NumberTicker } from '#/components/ui/number-ticker'
 import { Skeleton } from '#/components/ui/skeleton'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '#/components/ui/tooltip'
 
 export const Route = createFileRoute('/splits/')({
   component: SplitsPage,
@@ -163,15 +156,11 @@ function SplitsPage() {
   const { data: family } = useUserFamily(user?.id)
   const familyId = family?.id ?? ''
   const { data: groups, isLoading } = useSplitGroups(familyId)
-  const { splitGroupsLimit } = useDynamicPlan(familyId, family?.plan ?? 'free')
   const [createOpen, setCreateOpen] = useState(false)
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   const totalGroups = groups?.length ?? 0
-  const atLimit = splitGroupsLimit !== null && totalGroups >= splitGroupsLimit
 
   function handleNewGroup() {
-    if (atLimit) return
     setCreateOpen(true)
   }
 
@@ -192,42 +181,10 @@ function SplitsPage() {
           )}
         </div>
 
-        {atLimit ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="sm" className="gap-1.5" disabled>
-                <Lock className="h-4 w-4" /> New Group
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Upgrade to Plus for unlimited groups</TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button onClick={handleNewGroup} size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> New Group
-          </Button>
-        )}
+        <Button onClick={handleNewGroup} size="sm" className="gap-1.5">
+          <Plus className="h-4 w-4" /> New Group
+        </Button>
       </div>
-
-      {/* Upgrade banner — shown when at limit and has at least 1 group */}
-      {atLimit && totalGroups > 0 && (
-        <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Lock className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              Free plan includes 1 split group.{' '}
-              <span className="font-medium">Upgrade to Plus for unlimited groups.</span>
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="shrink-0 border-amber-500/40 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-            onClick={() => setUpgradeOpen(true)}
-          >
-            Upgrade
-          </Button>
-        </div>
-      )}
 
       {/* Content */}
       {isLoading ? (
@@ -247,7 +204,7 @@ function SplitsPage() {
               Create a group for a trip, shared bills, or any expense you split with others.
             </p>
           </div>
-          <Button onClick={handleNewGroup} disabled={atLimit} className="mt-1 gap-1.5">
+          <Button onClick={handleNewGroup} className="mt-1 gap-1.5">
             <Plus className="h-4 w-4" /> New Group
           </Button>
         </div>
@@ -260,7 +217,6 @@ function SplitsPage() {
       )}
 
       <CreateGroupSheet familyId={familyId} open={createOpen} onOpenChange={setCreateOpen} />
-      <UpgradePlanDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} requiredPlan="plus" />
     </div>
   )
 }

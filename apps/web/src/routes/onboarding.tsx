@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 import { SPACE_COLORS } from '@family/config'
 import { createSpace, updateFamily as updateFamilyFn } from '@family/supabase'
-import { PLAN_LIMITS } from '@family/types'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -353,14 +352,12 @@ function StepFamilyName({
 function StepMembers({
   userDisplayName,
   members,
-  membersLimit,
   onAdd,
   onRemove,
   onNext,
 }: {
   userDisplayName: string
   members: string[]
-  membersLimit: number | null // null = unlimited (Pro)
   onAdd: (name: string) => void
   onRemove: (name: string) => void
   onNext: () => void
@@ -368,13 +365,9 @@ function StepMembers({
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // User themselves count as 1 toward the limit
-  const totalCount = members.length + 1
-  const atLimit = membersLimit !== null && totalCount >= membersLimit
-
   const addMember = (name: string) => {
     const trimmed = name.trim()
-    if (!trimmed || members.includes(trimmed) || atLimit) return
+    if (!trimmed || members.includes(trimmed)) return
     onAdd(trimmed)
     setInput('')
     inputRef.current?.focus()
@@ -394,14 +387,6 @@ function StepMembers({
         <StepLabel step={2} />
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="text-xl font-bold">Who's in your family?</h2>
-          {membersLimit !== null && (
-            <span className={cn(
-              'shrink-0 text-xs font-medium tabular-nums',
-              atLimit ? 'text-destructive' : 'text-muted-foreground',
-            )}>
-              {totalCount} / {membersLimit}
-            </span>
-          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Add everyone you share a home and budget with. You're already included — just add the rest.
@@ -418,56 +403,44 @@ function StepMembers({
         </AnimatePresence>
       </div>
 
-      {/* At-limit notice */}
-      {atLimit && (
-        <p className="text-sm text-muted-foreground">
-          You've reached the <span className="font-medium text-foreground">{membersLimit}-member limit</span> on your current plan. You can add more after upgrading — or remove someone above to swap them out.
-        </p>
-      )}
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              addMember(input)
+            }
+          }}
+          placeholder="Type a name and press Enter…"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => addMember(input)}
+          disabled={!input.trim()}
+          className="shrink-0"
+        >
+          Add
+        </Button>
+      </div>
 
-      {/* Input — hidden when at limit */}
-      {!atLimit && (
-        <div className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addMember(input)
-              }
-            }}
-            placeholder="Type a name and press Enter…"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => addMember(input)}
-            disabled={!input.trim()}
-            className="shrink-0"
-          >
-            Add
-          </Button>
+      {/* Quick presets — hide already-selected */}
+      <div className="flex flex-col gap-2">
+        <p className="text-xs font-medium text-muted-foreground">Quick add</p>
+        <div className="flex flex-wrap gap-2">
+          {MEMBER_PRESETS.map((preset) => (
+            <PresetChip
+              key={preset}
+              label={preset}
+              selected={members.includes(preset)}
+              onClick={() => addMember(preset)}
+            />
+          ))}
         </div>
-      )}
-
-      {/* Quick presets — hide already-selected and hide entirely when at limit */}
-      {!atLimit && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground">Quick add</p>
-          <div className="flex flex-wrap gap-2">
-            {MEMBER_PRESETS.map((preset) => (
-              <PresetChip
-                key={preset}
-                label={preset}
-                selected={members.includes(preset)}
-                onClick={() => addMember(preset)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Expense callout */}
       <InfoCallout icon={<Receipt className="h-4 w-4" />}>
@@ -882,7 +855,6 @@ function OnboardingWizard({
               <StepMembers
                 userDisplayName={userDisplayName}
                 members={members}
-                membersLimit={family ? PLAN_LIMITS[family.plan].membersLimit : 3}
                 onAdd={addMember}
                 onRemove={removeMember}
                 onNext={() => setStep(3)}

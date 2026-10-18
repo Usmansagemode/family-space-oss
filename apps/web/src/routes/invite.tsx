@@ -21,7 +21,6 @@ type Status =
   | 'accepting'
   | 'done'
   | 'already-member'
-  | 'limit-reached'
   | 'invalid'
 
 function InvitePage() {
@@ -56,11 +55,9 @@ function InvitePage() {
     setStatus('accepting')
     acceptInvite(token, user.id, invite.familyId)
       .then(() => setStatus('done'))
-      .catch((err: { code?: string; message?: string }) => {
+      .catch((err: { code?: string }) => {
         if (err.code === '23505') {
           setStatus('already-member')
-        } else if (err.message?.includes('member_limit_reached')) {
-          setStatus('limit-reached')
         } else {
           setStatus('invalid')
         }
@@ -91,22 +88,6 @@ function InvitePage() {
         <p className="text-lg font-semibold">Invalid invite</p>
         <p className="text-sm text-muted-foreground">
           This link has already been used or is no longer valid.
-        </p>
-        <Button onClick={goHome} className="gap-2">
-          <Home className="h-4 w-4" />
-          Go home
-        </Button>
-      </InviteShell>
-    )
-  }
-
-  // Family is at member limit
-  if (status === 'limit-reached') {
-    return (
-      <InviteShell>
-        <p className="text-lg font-semibold">Family is full</p>
-        <p className="text-sm text-muted-foreground">
-          This family has reached its member limit. Ask the owner to upgrade their plan.
         </p>
         <Button onClick={goHome} className="gap-2">
           <Home className="h-4 w-4" />

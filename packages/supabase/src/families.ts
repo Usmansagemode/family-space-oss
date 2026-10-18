@@ -6,13 +6,10 @@ export type { Family, FamilyMember }
 function mapFamily(data: {
   id: string
   name: string
-  plan?: string | null
   currency?: string | null
   locale?: string | null
   google_calendar_id: string | null
   google_calendar_embed_url?: string | null
-  suspended_at?: string | null
-  suspend_reason?: string | null
   onboarding_completed_at?: string | null
   created_at: string
   updated_at?: string | null
@@ -20,13 +17,10 @@ function mapFamily(data: {
   return {
     id: data.id,
     name: data.name,
-    plan: (data.plan ?? 'free') as Family['plan'],
     currency: data.currency ?? 'USD',
     locale: data.locale ?? 'en-US',
     googleCalendarId: data.google_calendar_id ?? undefined,
     googleCalendarEmbedUrl: data.google_calendar_embed_url ?? undefined,
-    suspendedAt: data.suspended_at ? new Date(data.suspended_at) : null,
-    suspendReason: data.suspend_reason ?? null,
     onboardingCompletedAt: data.onboarding_completed_at
       ? new Date(data.onboarding_completed_at)
       : null,

@@ -15,7 +15,6 @@ import { formatCurrency } from '#/lib/utils'
 interface Props {
   currency?: string
   locale?: string
-  showDuplicates?: boolean
 }
 
 function importToEntry(e: ImportExpense): DuplicateEntry {
@@ -35,7 +34,7 @@ function dbToEntry(e: ExpenseWithNames): DuplicateEntry {
   }
 }
 
-export function ImportPreviewTable({ currency, locale, showDuplicates = false }: Props) {
+export function ImportPreviewTable({ currency, locale }: Props) {
   const { mappedData, setMappedData, existingExpenses } = useCSVImport()
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -55,8 +54,8 @@ export function ImportPreviewTable({ currency, locale, showDuplicates = false }:
   )
 
   const duplicateMap = useMemo(
-    () => showDuplicates ? detectDuplicates([...mappedData, ...visibleExisting]) : new Map(),
-    [mappedData, visibleExisting, showDuplicates],
+    () => detectDuplicates([...mappedData, ...visibleExisting]),
+    [mappedData, visibleExisting],
   )
 
   const allSelected = mappedData.length > 0 && mappedData.every((e) => selected.has(e.id))

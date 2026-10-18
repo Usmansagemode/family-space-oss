@@ -25,8 +25,8 @@ export function getSupabaseClient(): SupabaseClient {
 }
 
 /**
- * Initialize a service-role client used exclusively for admin DB mutations.
- * Never call auth methods on this client — it bypasses RLS via the service key.
+ * Initialize a service-role client for server-side account deletion.
+ * It bypasses RLS via the service key — never use it in the browser.
  */
 export function initServiceClient(url: string, serviceKey: string): void {
   if (_serviceClient) return
@@ -37,7 +37,7 @@ export function initServiceClient(url: string, serviceKey: string): void {
 
 /**
  * Returns the service-role Supabase client that bypasses RLS.
- * Only available in the admin app.
+ * Only available server-side, after initServiceClient().
  */
 export function getServiceClient(): SupabaseClient {
   if (!_serviceClient) {

@@ -1,6 +1,6 @@
 # Family Space
 
-SaaS platform for families: grocery lists, chore management, and expense tracking — all in one place.
+Self-hosted app for one family: grocery lists, chores, a family calendar, and household finances. One deployment = one family (see `docs/self-hosting.md`).
 
 ## Development Workflow (mandatory for every task)
 
@@ -15,20 +15,14 @@ Every feature task follows this exact sequence — no exceptions:
    - Reference the GitHub issue number (`closes #N` or `refs #N`)
    - No `Co-Authored-By` trailer — author is `Usmansagemode` only
 
-## Reference Projects
+## Single-Family Model
 
-- **family-calendar** (`/Users/usmankhalid/Documents/Personal Projects/family-calendar`)
-  — Boilerplate source. Board, spaces, items, drag & drop, invite flow, Google Calendar sync, monorepo structure, Supabase auth.
-- **daily-expenses** (`/Users/usmankhalid/Documents/Personal Projects/daily-expenses`)
-  — Feature source. Expense table, yearly analytics (9 charts), trackers, CSV/PDF import wizard (Gemini AI).
-
-## Billing & Pricing
-
-See `docs/billing-gates.md` for:
-- Plan tiers (Free / Plus $5 / Pro $10) and feature gates
-- How `usePlan()` hook works and where each gate lives
-- Step-by-step Stripe setup (when ready to go live)
-- How to test plans locally without Stripe
+- Exactly one `families` row (`families_singleton` unique index). Keep `family_id` columns, RLS and family-scoped queries as they are.
+- Sign-ups are disabled in Supabase (`supabase/config.toml`); the owner creates users in the dashboard.
+- `find_or_create_family()` (no arguments, uses `auth.uid()`) runs on every login: empty DB → caller becomes owner and gets onboarding; otherwise the caller joins as a member (membership row, system person space, `member.joined` activity).
+- Onboarding is owner-only (`families_update` RLS is owner-only).
+- Removing a member also bans their auth account (`apps/web/src/lib/server/block-member.ts`), because any signed-in user would otherwise rejoin on next login.
+- Server functions that need the service-role key: `delete-account.ts`, `block-member.ts` (`SUPABASE_SERVICE_ROLE_KEY`).
 
 ## Schema Changes
 
@@ -37,7 +31,7 @@ Two files must always be kept in sync for every database change:
 ### 1. `docs/schema.sql` — fresh install reference
 The complete database definition. Safe to re-run (drops and rebuilds everything).
 Used for: local dev setup, new environments, disaster recovery.
-**Never run on production** — it drops all tables.
+**Never run on an instance with data** — it drops all tables.
 
 Always update `schema.sql` when making any database change:
 - New tables or columns
@@ -47,12 +41,15 @@ Always update `schema.sql` when making any database change:
 - New indexes
 - New storage buckets or storage policies (PART 12)
 
-### 2. `docs/migrations/NNNN_description.sql` — production changes
+### 2. `docs/migrations/NNNN_description.sql` — changes for existing instances
+`schema.sql` is the baseline. Migrations start at `0001` and are needed once an
+instance with data exists; until then, update `schema.sql` only.
+
 Incremental, idempotent SQL applied to live databases without data loss.
 Each file is wrapped in a `do $migration$ begin ... end; $migration$;` block
 that checks `schema_migrations` and skips if already applied.
 
-**Every schema change needs BOTH files updated.**
+**Once instances exist, every schema change needs BOTH files updated.**
 
 ### Migration file template
 
@@ -76,27 +73,22 @@ end;
 $migration$;
 ```
 
-### Deploy process (develop → production)
+### Deploy process
 
 1. Merge code changes to `main`
 2. Deploy the app (Vercel / your host)
-3. In Supabase **production** SQL Editor, run each new migration file in order
+3. In the instance's Supabase SQL Editor, run each new migration file in order
 4. Verify: `select * from schema_migrations order by version;`
 
 ### Rules
-- Migration files are **append-only** — never edit a migration that has been applied to production
+- Migration files are **append-only** — never edit a migration that has been applied to an instance
 - Always write idempotent DDL (`CREATE OR REPLACE`, `IF NOT EXISTS`, `ON CONFLICT DO NOTHING`)
 - Number migrations sequentially: `0001`, `0002`, `0003`, …
-- If you forget to write a migration, derive it from the diff between schema.sql and what production currently has
+- If you forget to write a migration, derive it from the diff between schema.sql and what the instance currently has
 
 ## Project Specification
 
-See `SPEC.md` in this directory for the full project specification including:
-- Data model (all tables + SQL)
-- Deletion edge cases & decision matrix
-- SaaS database indexes
-- Feature map & implementation phases
-- Open questions
+See `SPEC.md` for the data model summary, deletion rules and feature map.
 
 ## Tech Stack
 
@@ -114,7 +106,7 @@ See `SPEC.md` in this directory for the full project specification including:
 - **Forms**: React Hook Form + Zod
 - **AI**: Google Gemini (PDF bank statement parsing)
 - **Icons**: Lucide React
-- **Path alias**: `@/` → `src/`
+- **Path alias**: `#/` → `src/` (web)
 
 ## Key Design Rules
 
@@ -126,9 +118,8 @@ See `SPEC.md` in this directory for the full project specification including:
 
 ### Person Spaces & Member Lifecycle
 - Every real member gets a **system person space** auto-created on join (`is_system = true`, `linked_user_id = <user_id>`)
-- **Member limit counts ALL active person spaces** (real + virtual) — `personSpaces.length` in the UI
 - A unique partial index (`spaces_family_linked_user_unique`) prevents duplicate active person spaces per user per family
-- When a member is **removed** from `user_families`, their person space is **unlinked** (`linked_user_id = null`) — it becomes a virtual member, preserving expense history
+- When a member is **removed** from `user_families`, their person space is **unlinked** (`linked_user_id = null`) — it becomes a virtual member, preserving expense history — and their auth account is banned
 - Virtual members (no `linked_user_id`) are manageable from Settings → Members → "Paid-by options"
 - Virtual members can be **archived** (soft-delete, hides from pickers) or **hard deleted** (if 0 expenses)
 - Archived virtual members can be **restored** via `restoreSpace()` — all data intact, just clears `deleted_at`
@@ -145,7 +136,7 @@ See `SPEC.md` in this directory for the full project specification including:
 
 ### Date Handling
 - **NEVER** use `new Date("YYYY-MM-DD")` — UTC shift breaks in US timezones
-- Use `parseLocalDate()` from `@/lib/dateUtils` for all date string parsing
+- Use `parseLocalDate()` from `@family/utils` (re-exported by `#/lib/date-utils`) for all date string parsing
 - Supabase DATE columns queried with plain strings (`"2026-01-15"`), never `.toISOString()`
 - `items` uses TIMESTAMPTZ; `expenses` uses DATE (no time component)
 
@@ -165,9 +156,8 @@ Both use `oklch(0.82 0.10 <hue>)` — pastel, readable, family-friendly. Keep th
 **Hardcoded copies that must be updated manually when the palette changes:**
 - `apps/web/src/lib/config.ts` → `DEFAULT_CATEGORIES` (category colors for onboarding)
 - `docs/schema.sql` → `find_or_create_family` RPC (same category colors, in SQL — can't import from JS)
-- `docs/demo-seed.sql` → space and category colors
 
-The SQL files can never import from the config package, so treat `packages/config/src/index.ts` as the reference and keep the SQL copies in sync by hand.
+The SQL file can never import from the config package, so treat `packages/config/src/index.ts` as the reference and keep the SQL copy in sync by hand.
 
 ### Currency & Locale
 - `formatCurrency()` for full display (tooltips, cards, tables)
@@ -176,7 +166,6 @@ The SQL files can never import from the config package, so treat `packages/confi
 
 ### Code Conventions
 - TypeScript strict mode
-- Imports sorted via `eslint-plugin-simple-import-sort`
 - Unused vars prefixed with `_`
 - `use<Feature>` hooks for queries, `use<Feature>Mutations` for mutations
 - Feature components in `src/components/<feature>/`

@@ -8,7 +8,7 @@
 
 **Project:** family-space
 **Generated:** 2026-03-16 12:49:48
-**Category:** SaaS (General)
+**Category:** Family / household app
 
 ---
 

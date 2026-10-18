@@ -53,7 +53,7 @@ $migration$;
 - New RLS policy → check if one already exists with the same name first (`DROP POLICY IF EXISTS` before `CREATE POLICY`)
 
 ### Backfill rule
-If adding a NOT NULL column or a column that existing rows should have a value for, always add an `UPDATE` statement to backfill existing rows before the `schema_migrations` insert. See 0008 for the pattern.
+If adding a NOT NULL column or a column that existing rows should have a value for, always add an `UPDATE` statement to backfill existing rows before the `schema_migrations` insert.
 
 ### Never do
 - No raw DDL without the guard block
@@ -74,8 +74,7 @@ Read `docs/schema.sql` to find the right location for the change, then output th
 
 Some values in schema.sql have hardcoded copies that must also be updated manually:
 - Color palettes: `find_or_create_family` RPC contains hardcoded category colors — update if palette changes
-- `docs/demo-seed.sql` — contains space and category colors — update if palette changes
-- `packages/config/src/index.ts` → `DEFAULT_CATEGORIES` — update if category defaults change
+- `apps/web/src/lib/config.ts` → `DEFAULT_CATEGORIES` — update if category defaults change
 
 Flag any of these that are affected by the change.
 

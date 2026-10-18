@@ -80,16 +80,12 @@ export function LoginPage() {
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="mx-auto flex max-w-2xl flex-col items-center px-6 pb-16 pt-20 text-center sm:pt-28">
         <h1 className="text-4xl font-bold tracking-tight sm:text-[3.25rem] sm:leading-[1.12]">
-          One app for your whole family.{' '}
-          <span className="text-muted-foreground">
-            Finances, lists & chores.
-          </span>
+          Family Space
         </h1>
 
         <p className="mt-5 max-w-lg text-base leading-relaxed text-muted-foreground">
-          Ditch the spreadsheets and group chats. Family Space brings shared
-          expense tracking, income logging, grocery lists by store, a chore
-          board, and yearly analytics into one place — synced for everyone.
+          Lists, chores, calendar and finances for your family. Sign in with
+          the account your family's owner created for you.
         </p>
 
         <Button

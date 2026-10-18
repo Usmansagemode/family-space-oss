@@ -1057,15 +1057,9 @@ create index idx_activity_log_family_recent
 -- PART 12: STORAGE
 -- ----------------------------------------------------------------
 
--- Avatars bucket (public, 200 KB limit, images only)
--- NOTE: Supabase storage buckets cannot be created via SQL.
--- Run this once in Supabase Dashboard → Storage → New bucket:
---   Name: avatars
---   Public: true
---   Max file size: 204800 (200 KB)
---   Allowed MIME types: image/jpeg, image/png, image/webp
---
--- Then apply the RLS policies below in SQL Editor:
+-- Avatars bucket (public, 200 KB limit, JPEG/PNG/WebP) is declared in
+-- supabase/config.toml [storage.buckets.avatars]; scripts/setup.sh creates it
+-- with `supabase seed buckets`. These are its access policies.
 
 -- Drop existing policies if re-running
 drop policy if exists "avatars_insert" on storage.objects;

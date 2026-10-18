@@ -62,7 +62,7 @@ export const deleteAccount = createServerFn({ method: 'POST' })
         return {
           success: false,
           code: 403,
-          message: 'Transfer or remove other members before deleting your account.',
+          message: 'Remove other members before deleting your account.',
         }
       }
     }
@@ -75,12 +75,12 @@ export const deleteAccount = createServerFn({ method: 'POST' })
       await deleteUserCompletely(user.id)
     } catch (err) {
       // Log server-side so partially-deleted state (families gone, auth user still alive)
-      // is observable in server logs and recoverable by support.
+      // is observable in server logs and can be cleaned up by the instance owner.
       console.error('[deleteAccount] failed for user', user.id, err)
       return {
         success: false,
         code: 500,
-        message: 'Account deletion failed. Some data may have been removed — please contact support.',
+        message: 'Account deletion failed. Some data may have been removed — check the server logs.',
       }
     }
 

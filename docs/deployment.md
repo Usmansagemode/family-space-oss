@@ -48,7 +48,7 @@ Then press:
 
 ## 2. Web — Vercel Deployment
 
-No new GitHub repo or Vercel project needed beyond your existing one. Vercel supports Turborepo monorepos natively — you just point it at the right subdirectory.
+`scripts/setup.sh` can create the Vercel project, set its environment variables and deploy (see [self-hosting.md](self-hosting.md)). The steps below do the same by hand. Vercel supports Turborepo monorepos natively — you point it at the right subdirectory.
 
 ### One-time setup
 
@@ -73,15 +73,15 @@ npm has a bug where optional platform-specific binaries are not installed correc
 - `Cannot find module '@rollup/rollup-linux-x64-gnu'`
 - `Cannot find native binding` from `@tailwindcss/oxide`
 
-Fix: declare the Linux binaries as `optionalDependencies` in `apps/web/package.json` — npm installs whichever matches the platform and skips the rest, so this is safe on macOS too. Already done for Rollup and Tailwind oxide. If a new package hits this error, add its `-linux-x64-gnu` and `-linux-x64-musl` variants the same way.
+Fix: declare the Linux binaries as `optionalDependencies` in `apps/web/package.json` — npm installs whichever matches the platform and skips the rest, so this is safe on macOS too. `apps/web/package.json` declares them for Rollup and Tailwind oxide. If a new package hits this error, add its `-linux-x64-gnu` and `-linux-x64-musl` variants the same way.
 
 **2. Env vars stripped by Turbo (`VITE_* missing from turbo.json`)**
 
-Turbo treats env vars as cache inputs — any var not listed in `turbo.json`'s `build.env` array is stripped before the task runs and will be `undefined` at build time. If Vercel warns that a var is missing from `turbo.json`, add it to the `env` array in the root `turbo.json`. Already done for all four `VITE_*` vars.
+Turbo treats env vars as cache inputs — any var not listed in `turbo.json`'s `build.env` array is stripped before the task runs and will be `undefined` at build time. If Vercel warns that a var is missing from `turbo.json`, add it to the `env` array in the root `turbo.json`. `turbo.json` lists both `VITE_*` vars.
 
 ### After setup
 
-Every push to `main` triggers a production deploy automatically. Every pull request gets its own preview URL.
+When the Vercel project is connected to the Git repository, every push to `main` deploys to production and every pull request gets a preview URL.
 
 ### Build commands (Vercel uses these automatically)
 
@@ -95,15 +95,11 @@ Every push to `main` triggers a production deploy automatically. Every pull requ
 
 ## 3. Mobile — Testing on a Device
 
-### Supabase redirect URL (required once)
+### Supabase redirect URL
 
-Before Google sign-in works on mobile, add the deep link scheme to Supabase's allowlist:
+Google sign-in on mobile redirects to the deep link `familyspace://auth`. It is in the redirect allowlist in `supabase/config.toml`, which `scripts/setup.sh` pushes. On a project configured by hand, add it under **Authentication** → **URL Configuration** → **Redirect URLs**.
 
-1. Go to **supabase.com** → your project → **Authentication** → **URL Configuration**
-2. Under **Redirect URLs**, add: `familyspace://auth`
-3. Save
-
-Without this, Supabase ignores the `redirect_to` parameter and falls back to the Site URL (localhost), so the in-app browser never redirects back to the app.
+Without it, Supabase ignores the `redirect_to` parameter and falls back to the Site URL (localhost), so the in-app browser never redirects back to the app.
 
 ### Option A: Expo Go (fastest, no build required)
 

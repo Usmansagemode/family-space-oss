@@ -406,10 +406,7 @@ The shared hooks in `packages/hooks` (e.g. `useSpaces`, `useItems`, `useItemMuta
 ```tsx
 // apps/mobile/src/screens/ItemsScreen.tsx
 const { data: items = [], isLoading, refetch } = useItems(space.id)
-const { complete, reAdd } = useItemMutationsCore(space.id, {
-  calendarId: null,
-  getToken: () => Promise.resolve(null),  // ← no Google Calendar on mobile yet
-})
+const { complete, reAdd } = useItemMutationsCore(space.id, space.familyId)
 ```
 
 `QueryClientProvider` wraps the app in `App.tsx` exactly as it does in the web `__root.tsx`.

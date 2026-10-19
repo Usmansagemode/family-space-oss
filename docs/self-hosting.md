@@ -217,7 +217,3 @@ See [deployment.md](deployment.md) for the Vercel settings and the mobile app.
 
 Neither the deployer nor `scripts/setup.sh` re-applies `docs/schema.sql` to an
 existing database.
-
-## Moving data from family-space
-
-See [migrating-from-family-space.md](migrating-from-family-space.md).

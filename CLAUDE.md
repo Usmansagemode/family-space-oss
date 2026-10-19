@@ -2,18 +2,12 @@
 
 Self-hosted app for one family: grocery lists, chores, a family calendar, and household finances. One deployment = one family (see `docs/self-hosting.md`).
 
-## Development Workflow (mandatory for every task)
+## Development Workflow
 
-Every feature task follows this exact sequence — no exceptions:
-
-1. **Read the GitHub issue** — fetch the issue body (not just the title; titles are mismatched on this repo). Confirm files, acceptance criteria, and implementation notes before writing any code.
-2. **Plan** — state what you're going to do in one short paragraph. Don't start writing files until the plan is clear.
-3. **Execute with Sonnet** — implement the task using the current model.
-4. **Run the reviewer** — spawn `fullstack-code-reviewer` agent with model `opus`. Pass it the full context: what changed, why, and what to check. Wait for the report.
-5. **Fix all criticals** from the review before committing. Document skipped suggestions and why.
-6. **Commit and push** — stage only the files for this task. Commit message must:
-   - Reference the GitHub issue number (`closes #N` or `refs #N`)
-   - No `Co-Authored-By` trailer — author is `Usmansagemode` only
+1. **Read the GitHub issue** — the full body, not just the title. Confirm files and acceptance criteria before writing code.
+2. **Plan** — state the change in one short paragraph before writing files.
+3. **Review** — get the change reviewed before committing, and fix every critical finding.
+4. **Commit** — stage only the files for the task; reference the issue (`closes #N` or `refs #N`).
 
 ## Single-Family Model
 

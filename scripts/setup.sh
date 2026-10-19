@@ -132,13 +132,27 @@ fi
 
 # ── 2. Database schema ────────────────────────────────────────────────────────
 # docs/schema.sql drops tables first, so it only ever runs on an empty public schema.
-state="$("${SUPABASE[@]}" db query "${DB_TARGET[@]}" --output-format json \
-  "select to_regclass('public.families') is not null as present,
-          (select count(*) from pg_tables where schemaname = 'public') as tables" 2>/dev/null \
-  | json_get 'd.rows[0].present + "," + d.rows[0].tables')"
-if [[ "$state" == true,* ]]; then
+# The first query on a new link can fail while the CLI sets up its login role, so retry.
+state=""
+for _ in 1 2 3; do
+  state="$("${SUPABASE[@]}" db query "${DB_TARGET[@]}" --output-format json \
+    "select to_regclass('public.families') is not null as present,
+            to_regclass('public.plan_features') is not null or to_regclass('public.invites') is not null as hosted,
+            (select count(*) from pg_tables where schemaname = 'public') as tables" 2>/dev/null \
+    | json_get '(r => r && r.present + "," + r.hosted + "," + r.tables)((d.rows || [])[0])' 2>/dev/null)" || state=""
+  [[ -n "$state" ]] && break
+  sleep 5
+done
+[[ -n "$state" ]] || die "Could not query the database. Re-run the script."
+if [[ "$state" == *,true,* ]]; then
+  die "This database holds a different Family Space edition (multi-family); it was left untouched.
+  Delete $STATE and re-run with a new, empty project."
+elif [[ "$state" == true,* ]]; then
+  # Re-running against an existing instance would re-push auth settings and site URL over it.
+  yes_no "Family Space is already set up in this project. Re-apply auth settings and the owner account?" n \
+    || die "Stopped; the database was left untouched."
   say "Schema already present; leaving the database untouched"
-elif [[ "$state" != "false,0" ]]; then
+elif [[ "$state" != "false,false,0" ]]; then
   die "The database already has tables but no Family Space schema ($state). Use a new project."
 else
   say "Applying docs/schema.sql"

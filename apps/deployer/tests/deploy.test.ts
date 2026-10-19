@@ -33,7 +33,7 @@ function world() {
   const w = {
     calls: [] as Array<Call>,
     projects: [] as Array<Record<string, string>>,
-    schema: { present: false, tables: 0, complete: false },
+    schema: { present: false, tables: 0, complete: false, hosted: false } as Record<string, unknown>,
     vercelProject: null as null | { id: string; rootDirectory: string },
     buildStates: [] as Array<string>,
     deployments: 0,
@@ -479,6 +479,16 @@ describe('deploy pipeline', () => {
     expect(ok).toBe(false)
     expect(order.at(-1)).toBe('schema')
     expect(error).toMatch(/partly applied/)
+  })
+
+  it('refuses a multi-family edition database before changing anything', async () => {
+    const w = world()
+    w.schema = { present: true, tables: 23, complete: true, hosted: true }
+    const { ok, error, order } = await run(context())
+    expect(ok).toBe(false)
+    expect(order.at(-1)).toBe('lock')
+    expect(error).toMatch(/multi-family/)
+    expect(w.calls.some((c) => c.url.includes('config%2Fauth') || c.url.includes('config/auth'))).toBe(false)
   })
 
   it('refuses a database with other tables', async () => {

@@ -128,6 +128,12 @@ export async function waitForHealthy(ctx: DeployContext): Promise<void> {
  * first on an empty database becomes the owner.
  */
 export async function lockSignups(ctx: DeployContext): Promise<void> {
+  // First step that changes the project, so refuse a database from the multi-family edition here
+  if ((await schemaState(ctx)).hosted) {
+    throw new DeployError(
+      'This project already holds a different Family Space edition (multi-family). Nothing was changed. Use a new project name.',
+    )
+  }
   await withRetry(ctx, () =>
     supabaseApi(token(ctx), 'PATCH', `/v1/projects/${ref(ctx)}/config/auth`, {
       disable_signup: true,
@@ -140,6 +146,8 @@ interface SchemaState {
   present: boolean
   tables: number
   complete: boolean
+  /** Has tables only the multi-family edition creates */
+  hosted: boolean
 }
 
 async function schemaState(ctx: DeployContext): Promise<SchemaState> {
@@ -148,6 +156,8 @@ async function schemaState(ctx: DeployContext): Promise<SchemaState> {
   >(
     ctx,
     `select to_regclass('public.families') is not null as present,
+       to_regclass('public.plan_features') is not null
+         or to_regclass('public.invites') is not null as hosted,
        (select count(*)::int from pg_tables where schemaname = 'public') as tables,
        exists (select 1 from pg_policies where schemaname = 'storage'
                and tablename = 'objects' and policyname = '${SCHEMA_SENTINEL_POLICY}') as complete`,

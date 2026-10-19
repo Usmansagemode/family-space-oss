@@ -51,23 +51,6 @@ export function Done({
         </p>
       </div>
 
-      <section
-        aria-labelledby="migrating"
-        className="border-primary/40 space-y-1 rounded-md border p-4 text-sm"
-      >
-        <h3 id="migrating" className="font-semibold">
-          Migrating from family-space? Don&apos;t sign in yet.
-        </h3>
-        <p className="text-muted-foreground">
-          Signing in first creates an empty family. Move your data before anyone
-          signs in:{' '}
-          <ExternalLink href={`${DOCS}/migrating-from-family-space.md`}>
-            migration runbook
-          </ExternalLink>
-          .
-        </p>
-      </section>
-
       <section aria-labelledby="next" className="space-y-2 text-sm">
         <h3 id="next" className="font-semibold">
           Next steps

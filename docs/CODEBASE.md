@@ -10,7 +10,8 @@ A developer reference for navigating the monorepo. Not a tutorial — assumes yo
 family-space/
 ├── apps/
 │   ├── web/          # Main user-facing app (TanStack Start + SSR)
-│   └── mobile/       # Expo React Native app
+│   ├── mobile/       # Expo React Native app
+│   └── deployer/     # Browser deployer SPA + Supabase forwarding function (see its README)
 ├── packages/
 │   ├── types/        # Shared TypeScript types (source of truth for all entities)
 │   ├── supabase/     # All DB query functions (the data layer)
@@ -21,7 +22,7 @@ family-space/
 │   ├── schema.sql    # Complete DB setup — single source of truth, safe to re-run on an empty DB
 │   └── migrations/   # Incremental changes for existing instances
 ├── supabase/         # Supabase CLI config (auth, storage buckets)
-├── scripts/setup.sh  # One-command instance setup
+├── scripts/setup.sh  # One-command instance setup (CLI counterpart of apps/deployer)
 └── turbo.json        # Turborepo build pipeline
 ```
 

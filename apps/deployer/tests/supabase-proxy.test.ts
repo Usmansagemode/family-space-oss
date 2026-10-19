@@ -183,3 +183,14 @@ describe('api/supabase origin and response type', () => {
     expect(res.headers.get('content-type')).toBe('application/json')
   })
 })
+
+describe('api/supabase auth config read', () => {
+  it('allows reading the auth config', async () => {
+    const spy = mockUpstream()
+    const res = await call(
+      `path=${encodeURIComponent(`/v1/projects/${REF}/config/auth`)}`,
+    )
+    expect(res.status).toBe(200)
+    expect(spy).toHaveBeenCalledOnce()
+  })
+})

@@ -20,6 +20,7 @@ const MANAGEMENT_ROUTES: Array<[string, RegExp]> = [
   ['GET', new RegExp(`^/v1/projects/${REF}$`)],
   ['GET', new RegExp(`^/v1/projects/${REF}/api-keys\\?reveal=true$`)],
   ['POST', new RegExp(`^/v1/projects/${REF}/database/query$`)],
+  ['GET', new RegExp(`^/v1/projects/${REF}/config/auth$`)],
   ['PATCH', new RegExp(`^/v1/projects/${REF}/config/auth$`)],
   ['PATCH', new RegExp(`^/v1/projects/${REF}/postgrest$`)],
   ['PATCH', new RegExp(`^/v1/projects/${REF}/config/storage$`)],

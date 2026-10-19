@@ -28,7 +28,13 @@ decide who gets an account.
 - **Sign-in** — email/password and Google. Sign-ups are off; the owner creates
   accounts.
 
-## Getting started
+## Deploy your own
+
+**[Deploy from your browser](https://family-space-deploy.usmankm.com)**: fill
+in a short form with free Supabase and Vercel accounts, and get your own
+instance in about ten minutes.
+
+Prefer the command line? Use the setup script:
 
 ```bash
 npm install
@@ -40,8 +46,8 @@ npm run dev               # http://localhost:3000
 
 Then sign in as the owner. The first sign-in runs onboarding.
 
-- [docs/self-hosting.md](docs/self-hosting.md) — setup, Google sign-in, adding
-  family members
+- [docs/self-hosting.md](docs/self-hosting.md) — the deployer, the setup
+  script, Google sign-in, adding family members
 - [docs/deployment.md](docs/deployment.md) — Vercel and the mobile app
 - [DEVELOPER.md](DEVELOPER.md) — local development and conventions
 - [docs/CODEBASE.md](docs/CODEBASE.md) — where things live
@@ -57,6 +63,7 @@ and Table · Recharts · dnd-kit · Expo (mobile app, `apps/mobile`).
 ```
 apps/web        Web app (TanStack Start)
 apps/mobile     Expo app
+apps/deployer   Browser deployer (family-space-deploy.usmankm.com)
 packages/       Shared types, Supabase queries, React Query hooks, utils, config
 docs/schema.sql Complete database definition
 supabase/       Supabase CLI config (auth, storage)

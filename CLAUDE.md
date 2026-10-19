@@ -24,6 +24,13 @@ Every feature task follows this exact sequence — no exceptions:
 - Removing a member also bans their auth account (`apps/web/src/lib/server/block-member.ts`), because any signed-in user would otherwise rejoin on next login.
 - Server functions that need the service-role key: `delete-account.ts`, `block-member.ts` (`SUPABASE_SERVICE_ROLE_KEY`).
 
+## Deployer (`apps/deployer`)
+
+- Browser counterpart of `scripts/setup.sh` (hosted mode), served at family-space-deploy.usmankm.com. `apps/deployer/README.md` maps every step to its API call.
+- Keep it in step with `setup.sh` and `supabase/config.toml`: a new setup step or auth/storage/api setting must be added to `src/deploy/` too (`authConfig()` mirrors `[auth]`).
+- `docs/schema.sql` is bundled at build time. The schema guard treats the last object the file creates (`SCHEMA_SENTINEL_POLICY`) as proof it ran completely; `tests/deploy.test.ts` fails if that stops being true.
+- `api/supabase.ts` is an allowlist: a new Management API call needs a new route there.
+
 ## Schema Changes
 
 Two files must always be kept in sync for every database change:

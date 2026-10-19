@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 import tailwindcss from '@tailwindcss/vite'
@@ -37,7 +38,38 @@ function localApi(): Plugin {
   }
 }
 
+// The app source is deployed from the same commit the deployer is built from,
+// so the uploaded code matches the bundled docs/schema.sql. Always a full
+// commit SHA: a branch or tag could move after the build.
+function sourceRef(): string {
+  const given = process.env.SOURCE_REF || process.env.VERCEL_GIT_COMMIT_SHA
+  if (given && /^[0-9a-f]{40}$/.test(given)) return given
+  if (given && !/^\w[\w.\-/]*$/.test(given)) {
+    throw new Error(`Invalid SOURCE_REF: ${given}`)
+  }
+  // A tag or branch name, or nothing (HEAD): resolve it in this checkout
+  const sha = execFileSync(
+    'git',
+    ['rev-parse', '--verify', `${given || 'HEAD'}^{commit}`],
+    { encoding: 'utf8' },
+  ).trim()
+  if (!/^[0-9a-f]{40}$/.test(sha)) throw new Error(`Cannot resolve ${given}`)
+  return sha
+}
+
+function sourceRepo(): string {
+  const repo = process.env.SOURCE_REPO || 'Usmansagemode/family-space-oss'
+  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repo)) {
+    throw new Error(`Invalid SOURCE_REPO: ${repo}`)
+  }
+  return repo
+}
+
 export default defineConfig({
+  define: {
+    __SOURCE_REPO__: JSON.stringify(sourceRepo()),
+    __SOURCE_REF__: JSON.stringify(sourceRef()),
+  },
   plugins: [tailwindcss(), viteReact(), localApi()],
   resolve: { alias: { '#': fileURLToPath(new URL('./src', import.meta.url)) } },
 })

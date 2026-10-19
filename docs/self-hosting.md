@@ -5,15 +5,57 @@ auth, storage) and host the web app wherever you like; Vercel is the supported
 path. Nobody can sign up: you create an account for each family member, and
 every account joins the same family the first time it signs in.
 
-## Requirements
+## Deploy from the browser
+
+<https://family-space-deploy.usmankm.com> deploys an instance with nothing
+installed. You need free [Supabase](https://supabase.com) and
+[Vercel](https://vercel.com) accounts. The page walks you through:
+
+1. A Supabase access token, your organization, a region and a project name.
+2. A Vercel token, and a team ID if the app should live in a team.
+3. Your email and password, which become the owner account.
+
+Clicking **Deploy** creates the Supabase project and applies the schema. It then
+creates the photo storage bucket, deploys the web app to Vercel and configures
+sign-in for the app's address. Last, it creates your account. The run takes 5–10
+minutes. If a step fails, **Retry** continues from that step. Running it again
+later with the same project name offers to reuse the existing projects. The result is the
+same instance as `scripts/setup.sh` produces, with email/password sign-in.
+Google sign-in can be added afterwards ([below](#google-sign-in-optional)).
+
+Make the tokens expire after a day, and delete them when the deploy is done.
+
+### What the deployer sees
+
+The tokens and your password stay in the browser tab's memory; nothing is
+saved. Vercel calls go straight from your browser to Vercel. Supabase only
+accepts these calls from its own sites, so they pass through a small forwarding
+function on the deployer's site (`apps/deployer/api/supabase.ts`). It sees the
+Supabase token, the project's service key and the owner password in transit.
+It only talks to Supabase, only allows the calls the deploy needs, and stores
+and logs nothing.
+
+Using the hosted copy means trusting its page as well: its JavaScript holds
+every token and decides which code is deployed. A Supabase access token can
+reach every project in your account, so use one that expires quickly. To
+remove the hosted copy from the picture, run the deployer on your own machine:
+
+```bash
+npm install
+cd apps/deployer && npm run dev   # http://localhost:5173
+```
+
+See [apps/deployer/README.md](../apps/deployer/README.md) for the exact API
+calls and how they map to `setup.sh`.
+
+## Command-line setup
+
+Requirements:
 
 - Node.js 20+ and npm
 - A [Supabase](https://supabase.com) account
-- A Google Cloud project, only if you want "Continue with Google"
 - A [Vercel](https://vercel.com) account, only if you want the script to deploy
 - Docker, only for a local development stack (`--local`)
-
-## One-command setup
 
 ```bash
 npm install
@@ -57,9 +99,10 @@ come from one file. Terraform's Supabase provider covers project and settings
 resources but not running the schema, creating users or storage buckets, so it
 would still need the CLI or API calls for half the work, plus state to manage.
 
-### What it cannot do for you
+## Google sign-in (optional)
 
-**Create the Google OAuth client.** Google offers no API for it.
+"Continue with Google" needs a Google OAuth client. Google offers no API to
+create one, so this is a manual step for either setup path.
 
 1. In [Google Cloud Console](https://console.cloud.google.com) → **APIs &
    Services** → **OAuth consent screen**, set up an External app with your app
@@ -69,8 +112,12 @@ would still need the CLI or API calls for half the work, plus state to manage.
    application**.
    - Authorized JavaScript origins: your app URL (and `http://localhost:3000`).
    - Authorized redirect URIs: `https://<project-ref>.supabase.co/auth/v1/callback`.
-3. Give the client ID and secret to `scripts/setup.sh`. If you skipped Google,
-   re-run the script; it asks again.
+3. Turn the provider on with the client ID and secret:
+   - **Deployed from the browser:** Supabase dashboard → **Authentication** →
+     **Sign In / Providers** → **Google**. Enable it and paste the client ID
+     and secret.
+   - **`scripts/setup.sh`:** the script asks for them. If you skipped Google,
+     re-run the script; it asks again.
 
 While the consent screen is in "Testing" mode, add each family member's Google
 address as a test user, or publish the app.
@@ -159,11 +206,17 @@ See [deployment.md](deployment.md) for the Vercel settings and the mobile app.
 
 ## Upgrading
 
-1. Pull the new code and redeploy the web app.
+1. Redeploy the web app with the new code. For an instance made with the
+   deployer, run the deployer again with the same project name and confirm
+   reusing the project: it deploys the current code to the same Vercel project
+   and keeps the database and the sign-in settings, including the site URL and
+   any Google sign-in. Otherwise, pull the new code and
+   redeploy.
 2. Run each new file in `docs/migrations/` in order in the Supabase SQL Editor.
    `select * from schema_migrations order by version;` shows what has run.
 
-`scripts/setup.sh` never re-applies `docs/schema.sql` to an existing database.
+Neither the deployer nor `scripts/setup.sh` re-applies `docs/schema.sql` to an
+existing database.
 
 ## Moving data from family-space
 

@@ -29,19 +29,36 @@ const GOOGLE_SVG = (
 // ── Email auth form ───────────────────────────────────────────────────────────
 
 function EmailAuthForm() {
-  const { signInWithEmail } = useAuthContext()
+  const { signInWithEmail, sendPasswordReset } = useAuthContext()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setNotice(null)
     setLoading(true)
     const err = await signInWithEmail(email, password)
     setLoading(false)
     if (err) setError(err)
+  }
+
+  async function handleForgot() {
+    setError(null)
+    setNotice(null)
+    if (!email.trim()) {
+      setError('Enter your email first, then choose "Forgot password?".')
+      return
+    }
+    setLoading(true)
+    const err = await sendPasswordReset(email.trim())
+    setLoading(false)
+    // Same message whether or not the address has an account
+    if (err) setError(err)
+    else setNotice(`If ${email.trim()} has an account, a reset link is on its way.`)
   }
 
   return (
@@ -62,10 +79,19 @@ function EmailAuthForm() {
         required
         autoComplete="current-password"
       />
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? 'Please wait…' : 'Sign in'}
       </Button>
+      <button
+        type="button"
+        onClick={() => void handleForgot()}
+        disabled={loading}
+        className="cursor-pointer text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+      >
+        Forgot password?
+      </button>
     </form>
   )
 }

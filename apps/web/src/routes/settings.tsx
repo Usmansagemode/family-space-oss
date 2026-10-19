@@ -35,6 +35,7 @@ import {
 import { CATEGORY_ICONS, getCategoryIcon } from '#/lib/categoryIcons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { SetPasswordForm } from '#/components/auth/SetPasswordForm'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -1704,6 +1705,18 @@ function AccountTab({ userId }: { userId: string }) {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Password */}
+      <div className="space-y-3">
+        <Label>Password</Label>
+        <p className="text-xs text-muted-foreground">
+          Used to sign in with your email. At least 6 characters.
+        </p>
+        <SetPasswordForm
+          submitLabel="Change password"
+          onDone={() => toast.success('Password updated')}
+        />
       </div>
 
       {/* Danger Zone */}

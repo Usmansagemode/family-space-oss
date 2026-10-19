@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { toast } from 'sonner'
 import {
   HeadContent,
   Scripts,
@@ -12,6 +13,7 @@ import { Toaster } from '#/components/ui/sonner'
 import { TooltipProvider } from '#/components/ui/tooltip'
 import { Header } from '#/components/Header'
 import { AppNav } from '#/components/AppNav'
+import { SetPasswordForm } from '#/components/auth/SetPasswordForm'
 import { AuthProvider } from '#/contexts/auth'
 import { useAuthContext } from '#/contexts/auth'
 import { useUserFamily } from '#/hooks/auth/useUserFamily'
@@ -54,7 +56,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 const PUBLIC_PATHS = ['/']
 
 function AuthedLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuthContext()
+  const { user, loading, recovering } = useAuthContext()
   const { data: family } = useUserFamily(user?.id)
   const { data: members } = useFamilyMembers(family?.id)
   const role = members?.find((m) => m.userId === user?.id)?.role
@@ -99,6 +101,26 @@ function AuthedLayout({ children }: { children: React.ReactNode }) {
   if (!user) {
     if (isPublicRoute) return <main className="flex-1 overflow-auto">{children}</main>
     return null
+  }
+
+  // Arrived through a password reset link: set the new password before anything else
+  if (recovering) {
+    return (
+      <main className="flex flex-1 items-start justify-center overflow-auto px-6 pt-20 sm:pt-28">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
+            <p className="text-sm text-muted-foreground">
+              Choose the password you'll use to sign in from now on.
+            </p>
+          </div>
+          <SetPasswordForm
+            submitLabel="Save password"
+            onDone={() => toast.success('Password updated')}
+          />
+        </div>
+      </main>
+    )
   }
 
   // Onboarding wizard: full-screen, no nav chrome

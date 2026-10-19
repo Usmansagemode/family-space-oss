@@ -9,35 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrackersRouteImport } from './routes/trackers'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as ImportRouteImport } from './routes/import'
-import { Route as ChartsRouteImport } from './routes/charts'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SplitsIndexRouteImport } from './routes/splits/index'
+import { Route as ChartsRouteImport } from './routes/charts'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TrackersRouteImport } from './routes/trackers'
 import { Route as ExpensesIndexRouteImport } from './routes/expenses/index'
-import { Route as SplitsGroupIdRouteImport } from './routes/splits/$groupId'
 import { Route as ExpensesImportRouteImport } from './routes/expenses/import'
+import { Route as SplitsIndexRouteImport } from './routes/splits/index'
+import { Route as SplitsGroupIdRouteImport } from './routes/splits/$groupId'
 
-const TrackersRoute = TrackersRouteImport.update({
-  id: '/trackers',
-  path: '/trackers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChartsRoute = ChartsRouteImport.update({
@@ -45,14 +30,24 @@ const ChartsRoute = ChartsRouteImport.update({
   path: '/charts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SplitsIndexRoute = SplitsIndexRouteImport.update({
-  id: '/splits/',
-  path: '/splits/',
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackersRoute = TrackersRouteImport.update({
+  id: '/trackers',
+  path: '/trackers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpensesIndexRoute = ExpensesIndexRouteImport.update({
@@ -60,14 +55,19 @@ const ExpensesIndexRoute = ExpensesIndexRouteImport.update({
   path: '/expenses/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SplitsGroupIdRoute = SplitsGroupIdRouteImport.update({
-  id: '/splits/$groupId',
-  path: '/splits/$groupId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ExpensesImportRoute = ExpensesImportRouteImport.update({
   id: '/expenses/import',
   path: '/expenses/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitsIndexRoute = SplitsIndexRouteImport.update({
+  id: '/splits/',
+  path: '/splits/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplitsGroupIdRoute = SplitsGroupIdRouteImport.update({
+  id: '/splits/$groupId',
+  path: '/splits/$groupId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -162,32 +162,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trackers': {
-      id: '/trackers'
-      path: '/trackers'
-      fullPath: '/trackers'
-      preLoaderRoute: typeof TrackersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/charts': {
@@ -197,18 +176,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChartsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/splits/': {
-      id: '/splits/'
-      path: '/splits'
-      fullPath: '/splits/'
-      preLoaderRoute: typeof SplitsIndexRouteImport
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trackers': {
+      id: '/trackers'
+      path: '/trackers'
+      fullPath: '/trackers'
+      preLoaderRoute: typeof TrackersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expenses/': {
@@ -218,18 +211,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExpensesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/splits/$groupId': {
-      id: '/splits/$groupId'
-      path: '/splits/$groupId'
-      fullPath: '/splits/$groupId'
-      preLoaderRoute: typeof SplitsGroupIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/expenses/import': {
       id: '/expenses/import'
       path: '/expenses/import'
       fullPath: '/expenses/import'
       preLoaderRoute: typeof ExpensesImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/splits/': {
+      id: '/splits/'
+      path: '/splits'
+      fullPath: '/splits/'
+      preLoaderRoute: typeof SplitsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/splits/$groupId': {
+      id: '/splits/$groupId'
+      path: '/splits/$groupId'
+      fullPath: '/splits/$groupId'
+      preLoaderRoute: typeof SplitsGroupIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

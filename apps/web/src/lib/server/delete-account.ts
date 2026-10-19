@@ -7,7 +7,7 @@ export type DeleteAccountResult =
   | { success: false; code: 401 | 403 | 500; message: string }
 
 export const deleteAccount = createServerFn({ method: 'POST' })
-  .inputValidator((input: { accessToken: string }) => {
+  .validator((input: { accessToken: string }) => {
     if (typeof input?.accessToken !== 'string' || input.accessToken.length < 20) {
       throw new Error('Invalid access token')
     }

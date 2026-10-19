@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 // only sticks if their auth account can no longer sign in. The owner calls
 // this before removeFamilyMember(); it bans the account indefinitely.
 export const blockMember = createServerFn({ method: 'POST' })
-  .inputValidator((input: { accessToken: string; familyId: string; userId: string }) => {
+  .validator((input: { accessToken: string; familyId: string; userId: string }) => {
     if (typeof input.accessToken !== 'string' || input.accessToken.length < 20) {
       throw new Error('Invalid access token')
     }

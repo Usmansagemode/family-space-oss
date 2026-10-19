@@ -115,49 +115,59 @@ export function App() {
   )
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-8 sm:py-12">
-      <header className="mb-8 space-y-2">
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          Deploy your own Family Space
-        </h1>
-        <p className="text-muted-foreground">
-          Grocery lists, chores, a calendar and household finances for one
-          family, running on your own free Supabase and Vercel accounts.
-        </p>
+    <>
+      <header className="flex h-14 items-center gap-2.5 border-b bg-[var(--header-bg)] px-4 backdrop-blur-md">
+        <img
+          src="/family-space-logo.jpg"
+          alt=""
+          className="h-7 w-7 shrink-0 rounded-lg object-cover"
+        />
+        <span className="text-sm font-bold tracking-tight">Family Space</span>
       </header>
-      <main className="bg-card text-card-foreground rounded-lg border p-5 shadow-sm sm:p-8">
-        {phase === 'form' && (
-          <SetupForm input={input} onChange={onChange} review={review} />
-        )}
-        {phase === 'deploy' && (
-          <Progress
-            statuses={statuses}
-            detail={detail}
-            error={error}
-            running={running}
-            needsConfirm={needsConfirm}
-            onRetry={deploy}
-            onConfirmReuse={() => {
-              if (run.current) run.current.state.reuseConfirmed = true
-              void deploy()
-            }}
-            onEdit={() => setPhase('form')}
-          />
-        )}
-        {phase === 'done' && result && <Done {...result} />}
-      </main>
-      <footer className="text-muted-foreground mt-6 text-xs">
-        Your tokens stay in this tab and are never stored. Vercel calls go
-        straight to Vercel; Supabase calls pass through this site&apos;s
-        forwarding function, which keeps and logs nothing.{' '}
-        <a
-          href="https://github.com/Usmansagemode/family-space-oss"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          Source code
-        </a>
-      </footer>
-    </div>
+      <div className="mx-auto max-w-xl px-4 py-10 sm:py-16">
+        <div className="mb-8 space-y-3 text-center">
+          <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+            Deploy your own Family Space
+          </h1>
+          <p className="text-muted-foreground">
+            Grocery lists, chores, a calendar and household finances for one
+            family, running on your own free Supabase and Vercel accounts.
+          </p>
+        </div>
+        <main className="bg-card text-card-foreground rounded-lg border p-5 shadow-sm sm:p-8">
+          {phase === 'form' && (
+            <SetupForm input={input} onChange={onChange} review={review} />
+          )}
+          {phase === 'deploy' && (
+            <Progress
+              statuses={statuses}
+              detail={detail}
+              error={error}
+              running={running}
+              needsConfirm={needsConfirm}
+              onRetry={deploy}
+              onConfirmReuse={() => {
+                if (run.current) run.current.state.reuseConfirmed = true
+                void deploy()
+              }}
+              onEdit={() => setPhase('form')}
+            />
+          )}
+          {phase === 'done' && result && <Done {...result} />}
+        </main>
+        <footer className="text-muted-foreground mt-6 text-xs">
+          Your tokens stay in this tab and are never stored. Vercel calls go
+          straight to Vercel; Supabase calls pass through this site&apos;s
+          forwarding function, which keeps and logs nothing.{' '}
+          <a
+            href="https://github.com/Usmansagemode/family-space-oss"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Source code
+          </a>
+        </footer>
+      </div>
+    </>
   )
 }

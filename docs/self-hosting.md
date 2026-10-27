@@ -206,13 +206,19 @@ See [deployment.md](deployment.md) for the Vercel settings and the mobile app.
 
 ## Upgrading
 
-1. Redeploy the web app with the new code. For an instance made with the
-   deployer, run the deployer again with the same project name and confirm
-   reusing the project: it deploys the current code to the same Vercel project
-   and keeps the database and the sign-in settings, including the site URL and
-   any Google sign-in. Otherwise, pull the new code and
-   redeploy.
+1. Redeploy the web app with the new code, in one of these ways:
+   - **Automatic updates.** Fork this repository on GitHub. In the Vercel
+     project, open **Settings → Git**, connect the fork and keep the Root
+     Directory at `apps/web`. From then on, every push to the fork's `main`
+     deploys, and **Sync fork** on GitHub pulls in new releases. The project's
+     environment variables and domains stay as they are.
+   - **Deployer.** Run the deployer again with the same project name and
+     confirm reusing the project. It deploys the current code to the same
+     Vercel project and keeps the database and the sign-in settings, including
+     the site URL and any Google sign-in.
+   - **Anything else.** Pull the new code and redeploy.
 2. Run each new file in `docs/migrations/` in order in the Supabase SQL Editor.
+   Do it right after the deploy: new code can expect the new schema.
    `select * from schema_migrations order by version;` shows what has run.
 
 Neither the deployer nor `scripts/setup.sh` re-applies `docs/schema.sql` to an
